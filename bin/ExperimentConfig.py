@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # ExperimentConfig
 #
 # define a set of parameters and values for an experiment
