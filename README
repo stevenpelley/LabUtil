@@ -1,0 +1,1 @@
+This repository contains scripts and programs deemed useful for the entire lab.  This may include scripts for automating experiments, parsing data, and generating plots.  All scripts should be placed in the bin directory to make it easier to include.  Example configurations and data should be in individual folders in the example directory.

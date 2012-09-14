@@ -1,0 +1,251 @@
+# if you import any package you must import them in the function
+
+params = []
+
+# the Shore command string
+def Fn(vals):
+  s = ("" 
+        + "zipf %(zipf)f\n"
+      )
+  if vals['experiment_num'] == 4:
+    s += "batch_period %(batch_period)s\n"
+  s += (""
+         + "set_mem_model %(experiment_num)d %(bank_ns)d %(lat_ns)d\n"
+         + "flush_params %(old_lsn_diff)d %(old_lsn_diff)d %(dirty_threshold)f %(dirty_threshold)f\n"
+         + "vflushall\n"
+#         + "vflusher_period %(vflusher_period)f\n"
+         + "echo START_WARMUP\n" 
+         + "measure %(threads)d %(spread)d %(threads)d %(warmup)d %(trxid)d 1\n" 
+         + "smst\n" 
+         + "xct_latency\n" # clears
+         + "echo STOP_WARMUP\n" 
+#         + "gdbtrace %(dataOffset)d %(page0)d %(page1)d %(page2)d %(page3)d\n"
+         + "echo LABEL_MAIN\n" 
+         + "echo START_RUN\n" 
+         + "measure %(threads)d %(spread)d %(threads)d %(runtime)d %(trxid)d 1\n" 
+#         + "vflusher_period -1.0\n"
+         + "echo STOP_RUN\n" 
+         + "echo START_SMSTATS\n" 
+         + "smst\n" 
+         + "echo STOP_SMSTATS\n" 
+         + "echo START_XCT_LATENCY\n"
+         + "xct_latency\n" # clears
+         + "echo STOP_XCT_LATENCY\n"
+         #+ "%(main)s"
+         + "echo END_CHECK\n" 
+         + "quit\n" 
+       ) 
+  return [s % vals]
+dependencyTup = ("sf", "spread", "threads", "warmup", "runtime", "trxid", "zipf", "experiment_num", "bank_ns", "lat_ns", "old_lsn_diff", "dirty_threshold", "batch_period",)
+params.append( ("commandString", dependencyTup, Fn) )
+
+# returns list of (string to match in shore.conf, new value)
+def Fn(vals):
+  matchString = "%s-%d-bufpoolsize" % (vals["conf"], vals["sf"])
+  newVal = vals["bp"]
+  return [ [(matchString, newVal)] ]
+params.append( ("confSubs", ("conf", "sf", "bp",), Fn,) )
+
+def Fn(vals):
+  return ["tpcc", "tpcb", "tm1"]
+params.append( ("conf", (), Fn,) )
+
+def Fn(vals):
+  if vals["conf"] == "tpcc":
+    return [20]
+  elif vals["conf"] == "tpcb":
+    return [20]
+  elif vals["conf"] == "tm1":
+    return [20]
+params.append( ("sf", ("conf",), Fn,) )
+
+# buffer pool size in kb
+def Fn(vals):
+  #return [256*1024, 512*1024, 1024*1024, 2 * 1024 * 1024, 4 * 1024 * 1024]
+  return [1024 * 1024 * 4] # 4gb
+params.append( ("bp", (), Fn,) )
+
+# should transactions be split across scale factors
+def Fn(vals):
+  return [1]
+params.append( ("spread", (), Fn,) )
+
+def Fn(vals):
+  return [18]
+params.append( ("threads", (), Fn,) )
+
+# warmup time in seconds
+def Fn(vals):
+  return [5]
+params.append( ("warmup", (), Fn,) )
+
+# runtime in seconds
+def Fn(vals):
+  return [20]
+params.append( ("runtime", (), Fn,) )
+
+def Fn(vals):
+  if vals["conf"] == "tpcc":
+    return [
+             #0, # mix
+             1, # new order
+             #2, # payment
+             #3, # order status, read only
+             #4, # delivery
+             #5  # stock level, read only
+           ]
+  elif vals["conf"] == "tpcb":
+    return [31] # ACCT_UPDATE
+  elif vals["conf"] == "tm1":
+    return [
+             #20, # full mix
+             #21, # get sub data, read
+             #22, # get new dest, read
+             #23, # get acc data, read
+             #24, # update sub data 62% success
+             25, # update location 100% success
+             #26, # call fwd mix
+             #27, # insert call fwd 31%
+             #28 # delete call fwd 31%
+           ]
+params.append( ("trxid", ("conf",), Fn,) )
+
+def Fn(vals):
+  return ["normal"]
+params.append( ("design", (), Fn,) )
+
+def Fn(vals):
+  return ["baseline"]
+params.append( ("system", (), Fn,) )
+
+# how many times to run each experiment
+def Fn(vals):
+  return list(range(1))
+params.append( ("runs", (), Fn,) )
+
+# we will fail this many times before continuing on
+def Fn(vals):
+  return [5]
+params.append( ("tries", (), Fn,) )
+
+# when we fail we will record the last "retrylines"
+def Fn(vals):
+  return [15]
+params.append( ("retrylines", (), Fn,) )
+
+# if this is defined as true we do not actually run the experiments just set them up
+def Fn(vals):
+  return [False]
+params.append( ("test", (), Fn,) )
+
+# zipf s parameter (0 is flat and it increases)
+# if we are sweeping zipf in labels make it a list of list
+def Fn(vals):
+  import numpy
+  #zipf = map(float, numpy.linspace(0,5,6)) + [1000.0]
+  #zipf = [0.0, 1.0]
+  zipf = [0.0]
+  if vals['conf'] == "tpcc":
+    return [0.0]
+  else:
+    return zipf
+params.append( ("zipf", ("conf",), Fn,) )
+
+# bank reservation is per cache line
+def Fn(vals):
+  import numpy
+  #l = map(int, numpy.linspace(0, 800, 3))
+  #l = [0.0]
+  l = [0.0, 60.0] # 1GB/s bandwidth
+  return l
+params.append( ("bank_ns", (), Fn,) )
+
+def Fn(vals):
+  import numpy
+  #l = sorted(map(int,numpy.linspace(0,5000,6)) + [10000, 50000])
+  #l = sorted(map(int,numpy.linspace(0,5000,6)))
+  l = sorted(map(int,numpy.linspace(0,2000,3)))
+  #l = [0.0]
+  return l
+params.append( ("lat_ns", (), Fn,) )
+
+def Fn(vals):
+  l = [1,3,4]
+  #l = [0]
+  return l
+params.append( ("experiment_num", (), Fn,) )
+
+def Fn(vals):
+  l = [0]
+  return l
+params.append( ("old_lsn_diff", (), Fn,) )
+
+def Fn(vals):
+  #l = [0.042, 1.0]
+  l = [0.0, 1.0]
+  if vals['experiment_num'] == 1:
+    return l
+  else:
+    return [1.0]
+params.append( ("dirty_threshold", ("experiment_num",), Fn,) )
+
+def Fn(vals):
+  import numpy
+  if vals['experiment_num'] == 4:
+    l = [.004, .04, .4]
+    #l = map(float, numpy.logspace(numpy.log10(.002), numpy.log10(0.3), num=15))
+  else:
+    l = [0.0] # not used
+  return l
+params.append( ("batch_period", ("experiment_num",), Fn,) )
+
+### NOTE ###
+# this is some old stuff that used the old config system
+# this is more to look at what some of the run.py features are if I forget
+#
+# transactions to run in test
+# if doing trxs in label make a list of list
+# from 10^0 to 10^4 with 9 points
+#trxs = map(int, numpy.logspace(0,4,9))
+#substitutions.append( ("trxs", None, {None : [ trxs ]}) )
+
+# flush period in seconds
+#substitutions.append( ("vflusher_period", None, {None : [-1]}) )
+
+# python file to run instead of using subprocess.
+# use fin, fout, and runArgs, do not close files
+# useful to use gdb to add extra scripting.
+#substitutions.append( ("runfile", None, {None : ["gdbtrace.py"]}) )
+#substitutions.append( ("runfile", None, {None : ["coalescing.py"]}) )
+
+###
+#### data offsets if we are testing "_bufpool.data"
+#### when we do anything other than data assign 0 and don't use
+#### otherwise test the first few, the last few, and a bunch of random
+#### all offsets must be 8-aligned
+###offsetList = [0, 8, 16, 24, 32, 40, 48, 56, 64, 8184]
+####offsetList.extend( random.sample(xrange(64+8,8192+8,8), 10) )
+####offsetList = [0]
+###offsetList.sort()
+###substitutions.append( ("dataOffset", None, {None : offsetList}) )
+###
+#### breakpoint text for setting watchpoint
+###substitutions.append( ("breakText", None, {None: ["bf_core.cpp:441"]}) )
+###
+#### breakpoint for clearing the gdb watchpoint counters
+###substitutions.append( ("gdbBreakText", None, {None: ["bfcb_t::db_set_gdbtrace"]}) )
+###
+#### reset the traces.out file when we reset the gdb counters
+###substitutions.append( ("gdbTraceReset", None, {None: [True]}) )
+###
+#### watchpoint hits between writing the results out (for safety)
+###substitutions.append( ("watchCountWrite", None, {None: [100]}) )
+###
+#### number of pages to trace
+#### max 4
+###substitutions.append( ("numPagesTrace", None, {None: [4]}) )
+###
+#### for debugging: break on watchpoint
+#### during a normal run this should be false
+####substitutions.append( ("breakOnWatchpoint", None, {None: [True]}) )
+###substitutions.append( ("breakOnWatchpoint", None, {None: [False]}) )
