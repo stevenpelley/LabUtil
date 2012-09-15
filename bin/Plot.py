@@ -60,17 +60,16 @@ def plot(plotVars):
   reorder(plotVars)
 
   # iterate over layers and call necessary functions
+  startAllLayers(plotVars)
   for i, row in enumerate(plotVars['Rows']):
-    start = i == 0
-    end = i == len(plotVars['Rows'])-1
-
-    # start here: TODO
-    ###if start:
-    ###  pass
-    ###elif end:
-    ###  pass
-    ###else:
-    ###  # determine if layers have changed, call after and before
+    layers = calculateUpdateLayers(plotVars, row)
+    endLayers(plotVars, layers)
+    # update plot state
+    # TODO
+    startLayers(plotVars, layers)
+    # process point
+    # TODO
+  endAllLayers(plotVars)
 
 
 # reorder columns and sort rows based on plot layers
