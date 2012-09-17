@@ -121,19 +121,50 @@ def PlotFnLineAfterSubplot(plotVars):
   if 'SubplotTitle' in plotVars:
     plotVars['Axes'].set_title(plotVars['SubplotTitle'])
   if 'LegendTitle' in plotVars:
-    plotVars['Axes'].legend(title=plotVars['SubplotTitle'], loc=plotVars['LegendLocation'])
+    lg = plotVars['Axes'].legend(title=plotVars['SubplotTitle'], loc=plotVars['LegendLocation'])
+    if lg: 
+      lg.draw_frame(False)
+    plotVars['Legend'] = lg
   if 'XLabel' in plotVars:
     plotVars['Axes'].set_xlabel(plotVars['XLabel'])
   if 'YLabel' in plotVars:
     plotVars['Axes'].set_ylabel(plotVars['YLabel'])
-
-  # TODO start here
+  # TODO: enforce axes limits
 
 def PlotFnLineBeforeLine(plotVars):
   print '+line'
+  lineStyles = ['-', '--', '-.', ":"]
+  lineColors = ["b", "g", "r"]
+  lineMarkers = ['o','^','s','*','D']
+
+  # set line label
+  label = ""
+  vals = plotVars['LayerValues']['Line']
+  for i, col in enumerate(plotVars['LayerGroups']['Line']):
+    val = vals[i]
+    label += "%s" % (str(val),)
+    if i != len(vals)-1:
+      label += " "
+  plotVars['LineLabel'] = label
+
+  # set linestyle, color, and marker
+  plotVars['LineStyle'] = lineStyles[plotVars['LineCount'] % len(lineStyles)]
+  plotVars['LineColor'] = lineColors[plotVars['LineCount'] % len(lineColors)]
+  plotVars['LineMarker'] = 'None'
+
+  plotVars['XVals'] = []
+  plotVars['YVals'] = []
+
+  plotVars['PlotFunction'] = plotVars['Axes'].plot
+
 def PlotFnLineAfterLine(plotVars):
   print '-line'
+  plotVars['PlotFunction'](plotVars['XVals'], plotVars['YVals'], label=plotVars['LineLabel'], linestyle=plotVars['LineStyle'], color=plotVars['LineColor'], marker=plotVars['LineMarker'])
+  plotVars['LineCount'] += 1
+
 def PlotFnLinePoint(plotVars):
+  plotVars['XVals'].append(plotVars['ColumnToValue']['XValue'])
+  plotVars['YVals'].append(plotVars['ColumnToValue']['YValue'])
   print ' point'
 
 ##################
