@@ -39,12 +39,6 @@ rows = newRows
 # now shuffle the row orders
 random.shuffle(rows)
 
-print columns
-for r in rows:
-  print r
-print
-print
-
 import sys
 labUtilDir = '/home/spelley/work/LabUtil/bin'
 sys.path.append(labUtilDir)
@@ -77,4 +71,6 @@ plotVars['OutputDir'] = 'simplePlot'
 plotVars['DefaultFns'] = 'Line'
 plotVars['XLabelOnLast'] = True
 
-Plot.plot(plotVars, printLayerFnCalls=False)
+plotVars['TraceFunctionCalls'] = False
+
+Plot.plot(plotVars)

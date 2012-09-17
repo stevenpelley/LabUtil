@@ -23,17 +23,8 @@ import collections
 #
 ##################
 
-# objects:
-# Figure
-# FigureCount
-# SubplotCount
-# Axes
-# XList
-# YList
-# Labels
-# OutputDir
 def PlotFnInit(plotVars):
-  if printLayerCalls:
+  if plotVars['TraceFunctionCalls']:
     print '+Plot'
   plotVars['FigureCount'] = 1
   outDir = plotVars['OutputDir']
@@ -44,11 +35,11 @@ def PlotFnInit(plotVars):
   os.mkdir(outDir)
 
 def PlotFnFini(plotVars):
-  if printLayerCalls:
+  if plotVars['TraceFunctionCalls']:
     print '-Plot'
 
 def PlotFnBeforeFigure(plotVars):
-  if printLayerCalls:
+  if plotVars['TraceFunctionCalls']:
     print '+figure'
   plotVars['Figure'] = plt.figure(plotVars['FigureCount'])
   plotVars['FigureCount'] += 1
@@ -60,7 +51,7 @@ def PlotFnBeforeFigure(plotVars):
   plotVars['SubplotDimensions'] = (len(plotVars['SubplotsInFigure'][plotVars['LayerValues']['Figure']]),1)
 
 def PlotFnAfterFigure(plotVars):
-  if printLayerCalls:
+  if plotVars['TraceFunctionCalls']:
     print '-figure'
   fig = plotVars['Figure']
   extraArtists = plotVars['ExtraArtists']
@@ -84,7 +75,7 @@ def PlotFnAfterFigure(plotVars):
   fig.savefig(plotVars['OutputDir'] + "/" + filename, format="pdf", transparent=True, bbox_inches="tight", bbox_extra_artists=extraArtists)
 
 def PlotFnBeforeSubplot(plotVars):
-  if printLayerCalls:
+  if plotVars['TraceFunctionCalls']:
     print '+subplot'
   # start a subplot and set up axes printing
   (x,y) = plotVars['SubplotDimensions']
@@ -121,7 +112,7 @@ def PlotFnBeforeSubplot(plotVars):
   plotVars['LineCount'] = 0
 
 def PlotFnAfterSubplot(plotVars):
-  if printLayerCalls:
+  if plotVars['TraceFunctionCalls']:
     print '-subplot'
   if 'SubplotTitle' in plotVars:
     plotVars['Axes'].set_title(plotVars['SubplotTitle'])
@@ -137,7 +128,7 @@ def PlotFnAfterSubplot(plotVars):
   # TODO: enforce axes limits
 
 def PlotFnBeforeLine(plotVars):
-  if printLayerCalls:
+  if plotVars['TraceFunctionCalls']:
     print '+line'
   lineStyles = ['-', '--', '-.', ":"]
   lineColors = ["b", "g", "r"]
@@ -164,28 +155,29 @@ def PlotFnBeforeLine(plotVars):
   plotVars['PlotFunction'] = plotVars['Axes'].plot
 
 def PlotFnAfterLine(plotVars):
-  if printLayerCalls:
+  if plotVars['TraceFunctionCalls']:
     print '-line'
   plotVars['PlotFunction'](plotVars['XVals'], plotVars['YVals'], label=plotVars['LineLabel'], linestyle=plotVars['LineStyle'], color=plotVars['LineColor'], marker=plotVars['LineMarker'])
   plotVars['LineCount'] += 1
 
 def PlotFnLinePoint(plotVars):
-  if printLayerCalls:
+  if plotVars['TraceFunctionCalls']:
     print ' point'
   plotVars['XVals'].append(plotVars['ColumnToValue']['XValue'])
   plotVars['YVals'].append(plotVars['ColumnToValue']['YValue'])
 
 ##################
 #
-# plot function iterates over all groups
-#
-##################
-
+# default functions for plot
+# set plotVars['DefaultFns'] to a key in the following dict
 # every layer has a tuple of functions
 # 2 functions are taken as before and after
 # 1 function as the single function for that point
 #
 # always consider the Init and Fini layers as point layers at start and end
+#
+##################
+
 defaultFns = {
   'Line' : {
     'Figure'  : (PlotFnBeforeFigure, PlotFnAfterFigure,),
@@ -197,16 +189,20 @@ defaultFns = {
   },
 }
 
+##################
+#
+# plot function iterates over all groups
+#
+##################
+
 # organize data and iterate over layers and data, calling necessary functions
 # vars:
 # all in reorder()
 # keep sets of current values in ['LayerValues'][LayerName] as tuples
-def plot(plotVars, printLayerFnCalls):
-  global printLayerCalls
-  printLayerCalls = printLayerFnCalls
+def plot(plotVars):
   reorder(plotVars) # reorder columns and rows
   setDefaultFns(plotVars) # make sure all layer functions are set
-  setupFigureSubplots(plotVars)
+  setupFigureSubplots(plotVars) # determines the number of subplots per figure
 
   # iterate over layers and call necessary functions
   startAllLayers(plotVars)
@@ -277,15 +273,16 @@ def setDefaultFns(plotVars):
         assert len(FnTup) == 1
         assert FnTup[0] != None
 
-  elif plotVars['DefaultFns'] in defaultFns:
+  else:
+    assert plotVars['DefaultFns'] in defaultFns, "don't have applicable default functions"
     defaults = defaultFns[plotVars['DefaultFns']]
     for layer in layersPlusInit:
-      assert layer in defaults
-      if layer not in singleFunctionLayers: # start and end
-        assert len(defaults[layer]) == 2
-      else:
-        assert len(defaults[layer]) == 1
-      
+      if layer in defaults:
+        if layer not in singleFunctionLayers: # start and end
+          assert len(defaults[layer]) == 2
+        else:
+          assert len(defaults[layer]) == 1
+    
     # fill in defaults for any missing functions in LayerFns
     if 'LayerFns' not in plotVars: # use all defaults
       plotVars['LayerFns'] = {}
@@ -297,18 +294,15 @@ def setDefaultFns(plotVars):
         if layer not in singleFunctionLayers: # start and end
           assert len(plotVars['LayerFns'][layer]) == 2
           FnList = list(plotVars['LayerFns'][layer])
-          if plotVars['Layers'][0] == None:
+          if plotVars['LayerFns'][layer][0] == None:
             FnList[0] = defaults[layer][0]
-          if plotVars['Layers'][1] == None:
+          if plotVars['LayerFns'][layer][1] == None:
             FnList[1] = defaults[layer][1]
           plotVars['LayerFns'][layer] = tuple(FnList)
         else:
           assert len(plotVars['LayerFns'][layer]) == 1
           if plotVars['Layers'][0] == None:
             plotVars['LayerFns'][layer] = (defaults[layer][0],)
-
-  else:
-    assert False, "Template not defined"
 
 # at the beginning of the plot loop start every layer and set LayerValues
 # do not process the first point
@@ -379,12 +373,19 @@ def endLayer(plotVars, layer):
 # {(tuple of figure values) -> set(tuple of subplot values)}
 # thus len(SubplotsInFigure[figure vals]) is the number of subplots in figure
 def setupFigureSubplots(plotVars):
+  if 'Subplot' not in plotVars['Layers']: return
+  haveFigure = 'Figure' in plotVars['Layers']
   subplotsInFigure = collections.defaultdict(set)
   layerValues = getCurrentLayerValues(plotVars, plotVars['Rows'][0])
   for row in plotVars['Rows']:
     oldValues = layerValues
     layerValues = getCurrentLayerValues(plotVars, row)
-    if oldValues['Figure'] != layerValues['Figure'] or oldValues['Subplot'] != layerValues['Subplot']:
+    if haveFigure:
+      figureChanged = oldValues['Figure'] != layerValues['Figure']
+    else:
+      figureChanged = False
+    subplotChanged = oldValues['Subplot'] != layerValues['Subplot']
+    if figureChanged or subplotChanged:
       subplotsInFigure[oldValues['Figure']].add(oldValues['Subplot'])
   # last  needs to be added
   subplotsInFigure[layerValues['Figure']].add(layerValues['Subplot'])
