@@ -125,7 +125,7 @@ def PlotFnAfterSubplot(plotVars):
     plotVars['Axes'].set_xlabel(plotVars['XLabel'])
   if 'YLabel' in plotVars:
     plotVars['Axes'].set_ylabel(plotVars['YLabel'])
-  # TODO: enforce axes limits
+  # TODO: enforce axes limits or leave to overriding
 
 def PlotFnBeforeLine(plotVars):
   if plotVars['TraceFunctionCalls']:
