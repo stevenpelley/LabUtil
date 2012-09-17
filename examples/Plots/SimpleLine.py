@@ -75,5 +75,6 @@ plotVars['Labels']= {
 
 plotVars['OutputDir'] = 'simplePlot'
 plotVars['DefaultFns'] = 'Line'
+plotVars['XLabelOnLast'] = True
 
 Plot.plot(plotVars)

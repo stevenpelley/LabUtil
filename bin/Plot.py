@@ -12,6 +12,10 @@
 import matplotlib 
 import matplotlib.pyplot as plt
 import operator
+import shutil
+import os
+import os.path
+import collections
 
 ##################
 #
@@ -31,19 +35,100 @@ import operator
 def PlotFnLineInit(plotVars):
   print '+Plot'
   plotVars['FigureCount'] = 1
+  outDir = plotVars['OutputDir']
+  if os.path.isdir(outDir):
+    shutil.rmtree(outDir)
+  elif os.path.isfile(outDir):
+    os.remove(outDir)
+  os.mkdir(outDir)
+
 def PlotFnLineFini(plotVars):
   print '-Plot'
+
 def PlotFnLineBeforeFigure(plotVars):
   print '+figure'
   plotVars['Figure'] = plt.figure(plotVars['FigureCount'])
   plotVars['FigureCount'] += 1
   plotVars['SubplotCount'] = 1
+  plotVars['ExtraArtists'] = []
+  if "Figure" in plotVars['Labels']:
+    plotVars['FigureTitle'] = plotVars['Labels']['Figure'] % plotVars['ColumnToValue']
+  # default subplot dimensions
+  plotVars['SubplotDimensions'] = (len(plotVars['SubplotsInFigure'][plotVars['LayerValues']['Figure']]),1)
+
 def PlotFnLineAfterFigure(plotVars):
   print '-figure'
+  fig = plotVars['Figure']
+  extraArtists = plotVars['ExtraArtists']
+
+  #### set up figure title
+  if 'FigureTitle' in plotVars:
+    extraArtists.append(fig.suptitle(plotVars['FigureTitle']))
+
+  # create the filename and save figure
+  if 'Figure' not in plotVars['LayerGroups'] or len(plotVars['LayerGroups']['Figure']) == 0:
+    filename = "plot"
+  else:
+    filename = ""
+    figVals = plotVars['LayerValues']['Figure']
+    for i, layer in enumerate(plotVars['LayerGroups']['Figure']):
+      layerVal = figVals[i]
+      filename += "%s_%s" % (str(layer), str(layerVal))
+      if i != len(plotVars['LayerGroups']['Figure'])-1: # not last
+        filename += "__"
+  filename += ".pdf"
+  #fig.savefig(plotVars['OutputDir'] + "/" + filename, format="pdf", transparent=True, bbox_inches="tight", bbox_extra_artists=extraArtists)
+  fig.savefig(plotVars['OutputDir'] + "/" + filename, format="pdf", transparent=True)
+
 def PlotFnLineBeforeSubplot(plotVars):
   print '+subplot'
+  # start a subplot and set up axes printing
+  (x,y) = plotVars['SubplotDimensions']
+  ax = plotVars['Figure'].add_subplot(x, y, plotVars['SubplotCount'])
+  plotVars['SubplotCount'] += 1
+  plotVars['Axes'] = ax
+  x_ax = ax.get_xaxis()
+  x_ax.tick_bottom()
+  y_ax = ax.get_yaxis()
+  y_ax.tick_left()
+  ax.spines['top'].set_color('none')
+  ax.spines['right'].set_color('none')
+
+  # create titles for subplot, xaxis, yaxis, and legend
+  if "Subplot" in plotVars['Labels']:
+    plotVars['SubplotTitle'] = plotVars['Labels']['Subplot'] % plotVars['ColumnToValue']
+  if "Line" in plotVars['Labels']:
+    plotVars['LegendTitle'] = plotVars['Labels']['Line'] % plotVars['ColumnToValue']
+  if "XAxis" in plotVars['Labels']:
+    plotVars['XLabel'] = plotVars['Labels']['XAxis'] % plotVars['ColumnToValue']
+    if 'XLabelOnLast' in plotVars and plotVars['XLabelOnLast']:
+      if plotVars['SubplotCount'] - 1 != (x * y):
+        del plotVars['XLabel']
+  if "YAxis" in plotVars['Labels']:
+    plotVars['YLabel'] = plotVars['Labels']['YAxis'] % plotVars['ColumnToValue']
+
+  if 'LegendLocation' not in plotVars:
+    plotVars['LegendLocation'] = None
+
+  # start collecting limits on axes
+  plotVars['XAxisLimits'] = [None, None]
+  plotVars['YAxisLimits'] = [None, None]
+
+  plotVars['LineCount'] = 0
+
 def PlotFnLineAfterSubplot(plotVars):
   print '-subplot'
+  if 'SubplotTitle' in plotVars:
+    plotVars['Axes'].set_title(plotVars['SubplotTitle'])
+  if 'LegendTitle' in plotVars:
+    plotVars['Axes'].legend(title=plotVars['SubplotTitle'], loc=plotVars['LegendLocation'])
+  if 'XLabel' in plotVars:
+    plotVars['Axes'].set_xlabel(plotVars['XLabel'])
+  if 'YLabel' in plotVars:
+    plotVars['Axes'].set_ylabel(plotVars['YLabel'])
+
+  # TODO start here
+
 def PlotFnLineBeforeLine(plotVars):
   print '+line'
 def PlotFnLineAfterLine(plotVars):
@@ -78,10 +163,9 @@ defaultFns = {
 # all in reorder()
 # keep sets of current values in ['LayerValues'][LayerName] as tuples
 def plot(plotVars):
-  # reorder columns and sort rows
-  reorder(plotVars)
-
-  setDefaultFns(plotVars)
+  reorder(plotVars) # reorder columns and rows
+  setDefaultFns(plotVars) # make sure all layer functions are set
+  setupFigureSubplots(plotVars)
 
   # iterate over layers and call necessary functions
   startAllLayers(plotVars)
@@ -89,6 +173,7 @@ def plot(plotVars):
     layers = getLayersToUpdate(plotVars, row)
     endLayers(plotVars, layers)
     # update plot state
+    plotVars['RowIndex'] = i
     updateLayerState(plotVars, row)
     startLayers(plotVars, layers)
     # process point
@@ -224,6 +309,11 @@ def endLayers(plotVars, layers):
 
 def updateLayerState(plotVars, row):
   plotVars['LayerValues'] = getCurrentLayerValues(plotVars, row)
+  plotVars['Row'] = row
+  colToVal = {}
+  for i, col in enumerate(plotVars['Columns']):
+    colToVal[col] = row[i]
+  plotVars['ColumnToValue'] = colToVal
 
 def processPoint(plotVars):
   plotVars['LayerFns']['Point'][0](plotVars)
@@ -243,6 +333,21 @@ def startLayer(plotVars, layer):
 
 def endLayer(plotVars, layer):
   plotVars['LayerFns'][layer][1](plotVars)
+
+# create dict 'SubplotsInFigure'
+# {(tuple of figure values) -> set(tuple of subplot values)}
+# thus len(SubplotsInFigure[figure vals]) is the number of subplots in figure
+def setupFigureSubplots(plotVars):
+  subplotsInFigure = collections.defaultdict(set)
+  layerValues = getCurrentLayerValues(plotVars, plotVars['Rows'][0])
+  for row in plotVars['Rows']:
+    oldValues = layerValues
+    layerValues = getCurrentLayerValues(plotVars, row)
+    if oldValues['Figure'] != layerValues['Figure'] or oldValues['Subplot'] != layerValues['Subplot']:
+      subplotsInFigure[oldValues['Figure']].add(oldValues['Subplot'])
+  # last  needs to be added
+  subplotsInFigure[layerValues['Figure']].add(layerValues['Subplot'])
+  plotVars['SubplotsInFigure'] = subplotsInFigure
 
 ###def plotLine(subs, figureCount = 1):
 ###  lineTypes = ['-', '--', '-.', ":"]
