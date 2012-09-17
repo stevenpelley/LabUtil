@@ -21,7 +21,6 @@ for offset in [0.0,5.0]:
         rows.append( (offset, exponent, slope, x, y,) )
 
 # randomize the column and row order (but keep consistent)
-# TODO
 newColOrder = list(columns)
 random.shuffle(newColOrder)
 # reorder all rows to be same column order
@@ -55,7 +54,7 @@ plotVars = {}
 plotVars['Columns'] = columns
 plotVars['Rows'] = rows
 
-# define the roll of each column
+# define the role of each column
 plotVars['Layers'] = ["Figure", "Subplot", "Line", "Point"]
 plotVars['LayerGroups'] = {
   'Figure'  : ["Offset"],
@@ -74,7 +73,7 @@ plotVars['Labels']= {
   'YAxis'   : 'this is y',
 }
 
-plotVars['outputDir'] = 'simplePlot'
-plotVars['defaultFns'] = 'Line'
+plotVars['OutputDir'] = 'simplePlot'
+plotVars['DefaultFns'] = 'Line'
 
 Plot.plot(plotVars)

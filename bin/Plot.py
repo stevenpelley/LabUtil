@@ -19,18 +19,25 @@ import operator
 ##################
 
 def PlotFnLineBeforeFigure(plotVars):
+  print '-figure'
   pass
 def PlotFnLineAfterFigure(plotVars):
+  print '+figure'
   pass
 def PlotFnLineBeforeSubplot(plotVars):
+  print '-subplot'
   pass
 def PlotFnLineAfterSubplot(plotVars):
+  print '+subplot'
   pass
 def PlotFnLineBeforeLine(plotVars):
+  print '-line'
   pass
 def PlotFnLineAfterLine(plotVars):
+  print '+line'
   pass
 def PlotFnLinePoint(plotVars):
+  print ' point'
   pass
 
 ##################
@@ -54,23 +61,24 @@ defaultFns = {
 # organize data and iterate over layers and data, calling necessary functions
 # vars:
 # all in reorder()
-# keep sets of current values in ['LayerValues'] as tuples
+# keep sets of current values in ['LayerValues'][LayerName] as tuples
 def plot(plotVars):
   # reorder columns and sort rows
   reorder(plotVars)
 
+  setDefaultFns(plotVars)
+
   # iterate over layers and call necessary functions
   startAllLayers(plotVars)
   for i, row in enumerate(plotVars['Rows']):
-    layers = calculateUpdateLayers(plotVars, row)
+    layers = getLayersToUpdate(plotVars, row)
     endLayers(plotVars, layers)
     # update plot state
-    # TODO
+    updateLayerState(plotVars, row)
     startLayers(plotVars, layers)
     # process point
-    # TODO
+    processPoint(plotVars)
   endAllLayers(plotVars)
-
 
 # reorder columns and sort rows based on plot layers
 # important vars:
@@ -83,10 +91,9 @@ def reorder(plotVars):
   # order columns
   columnsList = []
   for layer in plotVars['Layers']:
-    if layer in plotVars['LayerGroups']:
-      for item in plotVars['LayerGroups'][layer]:
-        assert item in plotVars['Columns']
-        columnsList.append(item)
+    for item in plotVars['LayerGroups'][layer]:
+      assert item in plotVars['Columns']
+      columnsList.append(item)
 
   # reorder columns within tuples
   newRows = []
@@ -106,6 +113,114 @@ def reorder(plotVars):
     columnName = plotVars['Columns'][i]
     reverse = 'ReverseColumns' in plotVars and columnName in plotVars['ReverseColumns']
     plotVars['Rows'].sort(reverse=reverse, key=operator.itemgetter(i))
+
+# any layer without an entry in plotVars['LayerFns'] or when a value is None
+# should take the default function
+#
+# Take default functions from plotVars['DefaultFns'] (e.g. 'Line', 'Histogram')
+def setDefaultFns(plotVars):
+  if 'DefaultFns' not in plotVars:
+    # verify that all layers have functions
+    assert 'LayerFns' in plotVars
+    for i, layer in enumerate(plotVars['Layers']):
+      assert layer in plotVars['layerFns']
+      FnTup = plotVars['layerFns'][layer]
+      assert isinstance(FnTup, tuple)
+      if i != len(plotVars['Layers'])-1:
+        assert len(FnTup) == 2
+        assert FnTup[0] != None
+        assert FnTup[1] != None
+      else:
+        assert len(FnTup) == 1
+        assert FnTup[0] != None
+  elif plotVars['DefaultFns'] in defaultFns:
+    defaults = defaultFns[plotVars['DefaultFns']]
+    for i, layer in enumerate(plotVars['Layers']):
+      assert layer in defaults
+      if i != len(plotVars['Layers'])-1: # start and end
+        assert len(defaults[layer]) == 2
+      else:
+        assert len(defaults[layer]) == 1
+      
+    # fill in defaults for any missing functions in LayerFns
+    if 'LayerFns' not in plotVars: # use all defaults
+      plotVars['LayerFns'] = {}
+    for i, layer in enumerate(plotVars['Layers']):
+      if layer not in plotVars['LayerFns']: # fill defaults
+        plotVars['LayerFns'][layer] = defaults[layer]
+      else: # fill in for None
+        assert isinstance(plotVars['LayerFns'][layer], tuple)
+        if i != len(plotVars['Layers'])-1: # start and end
+          assert len(plotVars['LayerFns'][layer]) == 2
+          FnList = list(plotVars['LayerFns'][layer])
+          if plotVars['Layers'][0] == None:
+            FnList[0] = defaults[layer][0]
+          if plotVars['Layers'][1] == None:
+            FnList[1] = defaults[layer][1]
+          plotVars['LayerFns'][layer] = tuple(FnList)
+        else: # point
+          assert len(plotVars['LayerFns'][layer]) == 1
+          if plotVars['Layers'][0] == None:
+            plotVars['LayerFns'][layer] = (defaults[layer][0],)
+  else:
+    assert False, "Template not defined"
+
+# at the beginning of the plot loop start every layer and set LayerValues
+# do not process the first point
+def startAllLayers(plotVars):
+  updateLayerState(plotVars, plotVars['Rows'][0])
+  for layer in plotVars['Layers']:
+    if layer != plotVars['Layers'][-1]: # start and end
+      startLayer(plotVars, layer)
+
+def endAllLayers(plotVars):
+  # state already at the end
+  for layer in reversed(plotVars['Layers']):
+    if layer != plotVars['Layers'][-1]: # start and end
+      endLayer(plotVars, layer)
+
+# return all layers who's value has changed since the last row
+# never return the "Point" layer
+def getLayersToUpdate(plotVars, row):
+  oldVals = plotVars['LayerValues']
+  newVals = getCurrentLayerValues(plotVars, row)
+  listOfChangedLayers = []
+  for layer in plotVars['Layers']:
+    if oldVals[layer] != newVals[layer] and layer != plotVars['Layers'][-1]:
+      listOfChangedLayers.append(layer)
+  return listOfChangedLayers
+
+def startLayers(plotVars, layers):
+  for layer in plotVars['Layers']:
+    if layer != plotVars['Layers'][-1] and layer in layers: # start and end
+      startLayer(plotVars, layer)
+
+def endLayers(plotVars, layers):
+  for layer in reversed(plotVars['Layers']):
+    if layer != plotVars['Layers'][-1] and layer in layers: # start and end
+      endLayer(plotVars, layer)
+
+def updateLayerState(plotVars, row):
+  plotVars['LayerValues'] = getCurrentLayerValues(plotVars, row)
+
+def processPoint(plotVars):
+  plotVars['LayerFns']['Point'][0](plotVars)
+
+# returns {layer -> tuple of values in layer}
+def getCurrentLayerValues(plotVars, row):
+  currentValues = {}
+  for layer in plotVars['Layers']:
+    currentLayerList = []
+    for item in plotVars['LayerGroups'][layer]:
+      currentLayerList.append(row[plotVars['Columns'].index(item)])
+    currentValues[layer] = tuple(currentLayerList)
+  return currentValues
+
+def startLayer(plotVars, layer):
+  plotVars['LayerFns'][layer][0](plotVars)
+
+def endLayer(plotVars, layer):
+  plotVars['LayerFns'][layer][1](plotVars)
 
 ###def plotLine(subs, figureCount = 1):
 ###  lineTypes = ['-', '--', '-.', ":"]
