@@ -77,4 +77,4 @@ plotVars['OutputDir'] = 'simplePlot'
 plotVars['DefaultFns'] = 'Line'
 plotVars['XLabelOnLast'] = True
 
-Plot.plot(plotVars)
+Plot.plot(plotVars, printLayerFnCalls=False)
