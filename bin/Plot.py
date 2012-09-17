@@ -30,12 +30,11 @@ import operator
 # OutputDir
 def PlotFnLineInit(plotVars):
   print '+Plot'
+  plotVars['FigureCount'] = 1
 def PlotFnLineFini(plotVars):
   print '-Plot'
 def PlotFnLineBeforeFigure(plotVars):
   print '+figure'
-  if 'FigureCount' not in plotVars:
-    plotVars['FigureCount'] = 1
   plotVars['Figure'] = plt.figure(plotVars['FigureCount'])
   plotVars['FigureCount'] += 1
   plotVars['SubplotCount'] = 1
