@@ -9,7 +9,8 @@
 #
 # general data is expected to have fields given by tuple "Columns"
 # and rows of values as a list of tuples in "Rows"
-import matplotlib
+import matplotlib 
+import matplotlib.pyplot as plt
 import operator
 
 ##################
@@ -18,27 +19,38 @@ import operator
 #
 ##################
 
+# objects:
+# Figure
+# FigureCount
+# SubplotCount
+# Axes
+# XList
+# YList
+# Labels
+# OutputDir
+def PlotFnLineInit(plotVars):
+  print '+Plot'
+def PlotFnLineFini(plotVars):
+  print '-Plot'
 def PlotFnLineBeforeFigure(plotVars):
-  print '-figure'
-  pass
-def PlotFnLineAfterFigure(plotVars):
   print '+figure'
-  pass
+  if 'FigureCount' not in plotVars:
+    plotVars['FigureCount'] = 1
+  plotVars['Figure'] = plt.figure(plotVars['FigureCount'])
+  plotVars['FigureCount'] += 1
+  plotVars['SubplotCount'] = 1
+def PlotFnLineAfterFigure(plotVars):
+  print '-figure'
 def PlotFnLineBeforeSubplot(plotVars):
-  print '-subplot'
-  pass
-def PlotFnLineAfterSubplot(plotVars):
   print '+subplot'
-  pass
+def PlotFnLineAfterSubplot(plotVars):
+  print '-subplot'
 def PlotFnLineBeforeLine(plotVars):
-  print '-line'
-  pass
-def PlotFnLineAfterLine(plotVars):
   print '+line'
-  pass
+def PlotFnLineAfterLine(plotVars):
+  print '-line'
 def PlotFnLinePoint(plotVars):
   print ' point'
-  pass
 
 ##################
 #
@@ -49,12 +61,16 @@ def PlotFnLinePoint(plotVars):
 # every layer has a tuple of functions
 # 2 functions are taken as before and after
 # 1 function as the single function for that point
+#
+# always consider the Init and Fini layers as point layers at start and end
 defaultFns = {
   'Line' : {
     'Figure'  : (PlotFnLineBeforeFigure, PlotFnLineAfterFigure,),
     'Subplot' : (PlotFnLineBeforeSubplot, PlotFnLineAfterSubplot,),
     'Line'    : (PlotFnLineBeforeLine, PlotFnLineAfterLine,),
     'Point'   : (PlotFnLinePoint,),
+    'Init'    : (PlotFnLineInit,),
+    'Fini'    : (PlotFnLineFini,),
   },
 }
 
@@ -119,25 +135,28 @@ def reorder(plotVars):
 #
 # Take default functions from plotVars['DefaultFns'] (e.g. 'Line', 'Histogram')
 def setDefaultFns(plotVars):
+  singleFunctionLayers = [plotVars['Layers'][-1], "Init", "Fini"]
+  layersPlusInit = plotVars['Layers'] + ['Init', 'Fini']
   if 'DefaultFns' not in plotVars:
     # verify that all layers have functions
     assert 'LayerFns' in plotVars
-    for i, layer in enumerate(plotVars['Layers']):
+    for layer in layersPlusInit:
       assert layer in plotVars['layerFns']
       FnTup = plotVars['layerFns'][layer]
       assert isinstance(FnTup, tuple)
-      if i != len(plotVars['Layers'])-1:
+      if layer not in singleFunctionLayers: # start and end
         assert len(FnTup) == 2
         assert FnTup[0] != None
         assert FnTup[1] != None
       else:
         assert len(FnTup) == 1
         assert FnTup[0] != None
+
   elif plotVars['DefaultFns'] in defaultFns:
     defaults = defaultFns[plotVars['DefaultFns']]
-    for i, layer in enumerate(plotVars['Layers']):
+    for layer in layersPlusInit:
       assert layer in defaults
-      if i != len(plotVars['Layers'])-1: # start and end
+      if layer not in singleFunctionLayers: # start and end
         assert len(defaults[layer]) == 2
       else:
         assert len(defaults[layer]) == 1
@@ -145,12 +164,12 @@ def setDefaultFns(plotVars):
     # fill in defaults for any missing functions in LayerFns
     if 'LayerFns' not in plotVars: # use all defaults
       plotVars['LayerFns'] = {}
-    for i, layer in enumerate(plotVars['Layers']):
+    for layer in layersPlusInit:
       if layer not in plotVars['LayerFns']: # fill defaults
         plotVars['LayerFns'][layer] = defaults[layer]
       else: # fill in for None
         assert isinstance(plotVars['LayerFns'][layer], tuple)
-        if i != len(plotVars['Layers'])-1: # start and end
+        if layer not in singleFunctionLayers: # start and end
           assert len(plotVars['LayerFns'][layer]) == 2
           FnList = list(plotVars['LayerFns'][layer])
           if plotVars['Layers'][0] == None:
@@ -158,10 +177,11 @@ def setDefaultFns(plotVars):
           if plotVars['Layers'][1] == None:
             FnList[1] = defaults[layer][1]
           plotVars['LayerFns'][layer] = tuple(FnList)
-        else: # point
+        else:
           assert len(plotVars['LayerFns'][layer]) == 1
           if plotVars['Layers'][0] == None:
             plotVars['LayerFns'][layer] = (defaults[layer][0],)
+
   else:
     assert False, "Template not defined"
 
@@ -169,6 +189,7 @@ def setDefaultFns(plotVars):
 # do not process the first point
 def startAllLayers(plotVars):
   updateLayerState(plotVars, plotVars['Rows'][0])
+  plotVars['LayerFns']['Init'][0](plotVars)
   for layer in plotVars['Layers']:
     if layer != plotVars['Layers'][-1]: # start and end
       startLayer(plotVars, layer)
@@ -178,6 +199,8 @@ def endAllLayers(plotVars):
   for layer in reversed(plotVars['Layers']):
     if layer != plotVars['Layers'][-1]: # start and end
       endLayer(plotVars, layer)
+
+  plotVars['LayerFns']['Fini'][0](plotVars)
 
 # return all layers who's value has changed since the last row
 # never return the "Point" layer
