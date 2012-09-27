@@ -117,7 +117,7 @@ def PlotFnAfterSubplot(plotVars):
   if 'SubplotTitle' in plotVars:
     plotVars['Axes'].set_title(plotVars['SubplotTitle'])
   if 'LegendTitle' in plotVars:
-    lg = plotVars['Axes'].legend(title=plotVars['SubplotTitle'], loc=plotVars['LegendLocation'])
+    lg = plotVars['Axes'].legend(title=plotVars['LegendTitle'], loc=plotVars['LegendLocation'])
     if lg: 
       lg.draw_frame(False)
     plotVars['Legend'] = lg
@@ -163,8 +163,10 @@ def PlotFnAfterLine(plotVars):
 def PlotFnLinePoint(plotVars):
   if plotVars['TraceFunctionCalls']:
     print ' point'
-  plotVars['XVals'].append(plotVars['ColumnToValue']['XValue'])
-  plotVars['YVals'].append(plotVars['ColumnToValue']['YValue'])
+  plotVars['X'] = plotVars['ColumnToValue'][plotVars['LayerGroups']['Point'][0]]
+  plotVars['Y'] = plotVars['ColumnToValue'][plotVars['LayerGroups']['Point'][1]]
+  plotVars['XVals'].append(plotVars['X'])
+  plotVars['YVals'].append(plotVars['Y'])
 
 ##################
 #
@@ -323,13 +325,21 @@ def endAllLayers(plotVars):
 
 # return all layers who's value has changed since the last row
 # never return the "Point" layer
+# make sure to account for empty layer groups:
+#   an empty layer changes if the layer above changes
+#   (e.g. empty subplot changes when figure changes)
 def getLayersToUpdate(plotVars, row):
   oldVals = plotVars['LayerValues']
   newVals = getCurrentLayerValues(plotVars, row)
   listOfChangedLayers = []
+  lastChanged = False
   for layer in plotVars['Layers']:
-    if oldVals[layer] != newVals[layer] and layer != plotVars['Layers'][-1]:
+    layerEmpty = len(newVals[layer]) == 0
+    if (oldVals[layer] != newVals[layer] or (layerEmpty and lastChanged)) and layer != plotVars['Layers'][-1]:
       listOfChangedLayers.append(layer)
+      lastChanged = True
+    else:
+      lastChanged = False
   return listOfChangedLayers
 
 def startLayers(plotVars, layers):
