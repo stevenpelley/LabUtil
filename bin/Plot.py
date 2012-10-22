@@ -42,6 +42,7 @@ def PlotFnBeforeFigure(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '+figure'
   plotVars['Figure'] = plt.figure(plotVars['FigureCount'])
+  plotVars['Figure'].clf()
   plotVars['FigureCount'] += 1
   plotVars['SubplotCount'] = 1
   plotVars['ExtraArtists'] = []
