@@ -44,17 +44,18 @@ labUtilDir = '/home/spelley/work/LabUtil/bin'
 #labUtilDir = '/home/sleimanf/tools/plot/LabUtil/bin'
 sys.path.append(labUtilDir)
 import Plot
+import PlotHist
 
 plotVars = {}
 plotVars['Columns'] = columns
 plotVars['Rows'] = rows
 
 # define the role of each column
-plotVars['Layers'] = ["Figure", "Subplot", "Line", "Point"]
+plotVars['Layers'] = ["Figure", "Subplot", "Hist", "Point"]
 plotVars['LayerGroups'] = {
   'Figure'  : ["Offset"],
   'Subplot' : ["Exponent"],
-  'Line'   : ["Slope"],
+  'Hist'   : ["Slope"],
   'Point'   : ["XValue", "YValue"],
 }
 
@@ -63,13 +64,13 @@ plotVars['LayerGroups'] = {
 plotVars['Labels']= {
   'Figure'  : 'figure with offset: %(Offset)f',
   'Subplot' : 'subplot with exponent: %(Exponent)s',
-  'Line'   : 'Slope:',
+  'Hist'   : 'Slope:',
   'XAxis'   : 'this is x',
   'YAxis'   : 'this is y',
 }
 
-plotVars['OutputDir'] = 'SimpleLine'
-plotVars['DefaultFns'] = 'Line'
+plotVars['OutputDir'] = 'SimpleHist'
+plotVars['DefaultFns'] = 'Hist'
 plotVars['XLabelOnLast'] = True
 
 plotVars['TraceFunctionCalls'] = False
