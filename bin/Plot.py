@@ -221,12 +221,6 @@ def plot(plotVars):
   endAllLayers(plotVars)
 
 # reorder columns and sort rows based on plot layers
-# important vars:
-#   Columns
-#   Rows
-#   Layers
-#   LayerGroups
-#   ReverseColumns
 def reorder(plotVars):
   # order columns
   columnsList = []
