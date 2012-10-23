@@ -17,6 +17,8 @@ import os
 import os.path
 import collections
 
+import CmpToKey
+
 ##################
 #
 # line plot functions
@@ -245,8 +247,12 @@ def reorder(plotVars):
   # sort tuples appropriately
   for i in range(len(plotVars['Columns'])-1, -1, -1):
     columnName = plotVars['Columns'][i]
+    keyFn = operator.itemgetter(i)
+    if 'SortColumns' in plotVars and columnName in plotVars['SortColumns']:
+      keyFn = plotVars['SortColumns'][columnName]
+      keyFn = CmpToKey.map_and_cmp_to_key(operator.itemgetter(i), keyFn)
     reverse = 'ReverseColumns' in plotVars and columnName in plotVars['ReverseColumns']
-    plotVars['Rows'].sort(reverse=reverse, key=operator.itemgetter(i))
+    plotVars['Rows'].sort(reverse=reverse, key=keyFn)
 
 # any layer without an entry in plotVars['LayerFns'] or when a value is None
 # should take the default function
