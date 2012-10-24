@@ -12,10 +12,17 @@ import random
 
 columns = ("Clone", "Base", "Multiplier", "Exponent", "Height",)
 rows = []
-for clone in [1.0,2.0]:
-  for base in [1.0,2.0,3.0]:
+
+clones = [1.0] # figures
+#clones = [1.0,2.0] # figures
+#bases = [1.0] # groups
+bases = [1.0, 2.0, 3.0] # groups
+exps = [1.0,2.0,3.0] # stacks
+#exps = [1.0] # stacks
+for clone in clones:
+  for base in bases:
     for multiplier in [1.0, 2.0, 3.0,4.0]:
-      for exp in [1.0,2.0,3.0]:
+      for exp in exps:
         val = multiplier * (base**exp)
         rows.append( (clone, base, multiplier,exp,val,))
 
@@ -45,10 +52,22 @@ plotVars['LayerGroups'] = {
 plotVars['Labels']= {
   'Figure'  : 'figure',
   'Subplot' : 'Clone: %(Clone)s',
-  'Group'   : 'Base',
-  'Bar'     : 'Bar',
-  'Stacks'  : 'Stack',
+  'Group'   : 'Base: %(Base).1f',
+  'Bar'     : 'Bar: %(Multiplier).1f',
+  'Stack'   : 'Exp: %(Exponent).1f',
+  'YAxis'   : "Count?",
 }
+
+# Name, Number, Color, Texture
+# Name = label under each bar
+# Number = numbers and ticks on x-axis
+# color, texture = each bar gets a color or texture with legend
+plotVars['BarLabel'] = 'Name'
+
+# percent of whitespace between groups
+plotVars['GroupWhiteSpace'] = .2
+
+plotVars['LegendLocation'] = 'upper left'
 
 plotVars['OutputDir'] = 'Bar'
 plotVars['DefaultFns'] = 'Bar'

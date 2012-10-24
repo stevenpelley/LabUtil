@@ -11,6 +11,7 @@ import os.path
 import matplotlib
 import matplotlib.pyplot as plt
 import shutil
+import numpy as np
 
 def PlotFnInit(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -185,22 +186,160 @@ def PlotFnBeforeBarSubplot(plotVars):
   # remember everything and process entire plot at end of subplot
   # Groups = {group label : bars}
   # bars = [[stacks from bottom]] (list of bars, each bar a list of stacks)
-  plotVars['Groups'] = {}
+  plotVars['BarStruct'] = []
   # keep a list of bars and stacks to keep order and labels consistent
+  plotVars['Groups'] = []
   plotVars['Bars'] = []
   plotVars['Stacks'] = []
+
+  plotVars['BarColors'] = ["b", "g", "r", "y",]
+  plotVars['BarTextures'] = ['/', '\\', '//', '\\\\', 'x']
+
+  plotVars['StackColor'] = True
+  plotVars['StackHatch'] = True
+  plotVars['BarColor']   = False
+  plotVars['BarHatch']   = False
+  plotVars['BarLabel']   = True
 
 def PlotFnAfterBarSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '-BarSubplot'
+
+  ax = plotVars['Axes']
+  groups = plotVars['Groups']
+  bars = plotVars['Bars']
+  stacks = plotVars['Stacks']
+  barStruct = plotVars['BarStruct']
+  barLabelType = plotVars['BarLabel']
+  whiteSpace = plotVars['GroupWhiteSpace']
+  numGroups = len(groups)
+  numBars = len(bars)
+  numStacks = len(stacks)
+
+  # set up where to use labels, colors, and textures
+  stackColor   = plotVars['StackColor']
+  stackTexture = plotVars['StackHatch']
+  barColor     = plotVars['BarColor']  
+  barTexture   = plotVars['BarHatch']  
+  barLabel     = plotVars['BarLabel']  
+  assert not (stackColor and barColor)
+  assert not (stackTexture and barTexture)
+
+  # first transform into a list format [bar][stack] -> stacks of each group
+  # example: byGroups[0][0] gives a list of stack heights in first bar, bottom stack each group
+  byGroups = []
+  for i, bar in enumerate(bars):
+    byGroups.append([])
+    for j, stack in enumerate(stacks):
+      byGroups[-1].append([])
+      for k, group in enumerate(groups):
+        byGroups[-1][-1].append(barStruct[k][i][j])
+
+  # width of each bar = (1-whiteSpace)/numBars
+  barWidth = (1.0-whiteSpace)/float(numBars)
+
+  # bars start at groupIDX + whiteSpace + barIDX*width
+  # group labels at groupIDX + whitespace + (1.0-whitespace)/2.0
+  # bar labels at barStart + width/2
+  for barIDX in range(numBars):
+    bottoms = np.zeros(numGroups)
+    for stackIDX in range(numStacks):
+      heights = np.array(byGroups[barIDX][stackIDX])
+      # create array of bar start locations
+      barStart = np.arange(numGroups) + whiteSpace + (barIDX*barWidth)
+
+      # plot this stack across all groups
+      # set a color and texture
+      color = ''
+      if stackColor or barColor:
+        if stackColor:
+          idx = stackIDX
+        elif barColor:
+          idx = barIDX
+        color = plotVars['BarColors'][idx % len(plotVars['BarColors'])]
+      texture = ''
+      if stackTexture or barTexture:
+        if stackTexture:
+          idx = stackIDX
+        elif barTexture:
+          idx = barIDX
+        texture = plotVars['BarTextures'][idx % len(plotVars['BarTextures'])]
+      ax.bar(barStart, heights, barWidth, bottom=bottoms, color=color, hatch=texture)
+
+      bottoms = bottoms + heights
+
+  # set up the legend
+  if stackColor or stackTexture or barColor or barTexture:
+    # this is a custom legend using proxy artists
+    # artists are generated for legend support but not drawn on the axes
+    artists = []
+    labels = []
+    # bar artists
+    if (barColor or barTexture) and numBars > 1:
+      for barIDX in range(numBars):
+        color = "None"
+        hatch = "None"
+        label = bars[barIDX]
+        if barColor:
+          color = plotVars['BarColors'][barIDX % len(plotVars['BarColors'])]
+        if barTexture:
+          hatch = plotVars['BarTextures'][barIDX % len(plotVars['BarTextures'])]
+        artists.append(matplotlib.patches.Rectangle((0,0),1,1,color=color,hatch=hatch))
+        labels.append(label)
+    # stack artists - start at the last stacks to go top down
+    if (stackColor or stackTexture) and numStacks > 1:
+      for stackIDX in range(numStacks):
+        color = "None"
+        hatch = "None"
+        label = stacks[stackIDX]
+        if stackColor:
+          color = plotVars['BarColors'][stackIDX % len(plotVars['BarColors'])]
+        if stackTexture:
+          hatch = plotVars['BarTextures'][stackIDX % len(plotVars['BarTextures'])]
+          # BUG in matplotlib -- legend will not show both hatch and fill
+          # default to hatch
+          color = "None"
+        artists.append(matplotlib.patches.Rectangle((0,0),1,1,color=color,hatch=hatch))
+        labels.append(label)
+    if len(artists) > 0:
+      lg = ax.legend(artists, labels, title="", loc = plotVars['LegendLocation'])
+      lg.draw_frame(False)
+      plotVars['Legend'] = lg
+
+  # set up labels for bars
+  ax.minorticks_off()
+  if barLabel:
+    # set xticks and xticklabels
+    ticks = []
+    tickLabels = []
+    for i, group in enumerate(groups):
+      for j, bar in enumerate(bars):
+        barStart = i + whiteSpace + (j*barWidth) + (barWidth/2.0)
+        ticks.append(barStart)
+        tickLabels.append(bars[j])
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(tickLabels, rotation=30, va='top', ha='right')
+    ax.tick_params(bottom=False)
+
+  # set labels for groups
+  (bottom, top) = ax.get_ylim()
+  groupLabelY = -top*.2
+  for i, group in enumerate(groups):
+    groupLabelX = i + whiteSpace + (1.0-whiteSpace)/2.0
+    plotVars['ExtraArtists'].append(ax.text(groupLabelX, groupLabelY, groups[i], va="top", ha="center"))
+
   PlotFnAfterSubplot(plotVars)
 
 def PlotFnBeforeBarGroup(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '+BarGroup'
-  barGroup = plotVars['LayerValues']['Group']
+  if 'Labels' in plotVars and 'Group' in plotVars['Labels']:
+    barGroup = plotVars['Labels']['Group'] % plotVars['ColumnToValue']
+  else:
+    barGroup = plotVars['LayerValues']['Group']
   assert barGroup not in plotVars['Groups']
-  plotVars['Groups'][barGroup] = []
+  plotVars['Groups'].append(barGroup)
+  plotVars['BarStruct'].append([])
 
 def PlotFnAfterBarGroup(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -210,8 +349,11 @@ def PlotFnBeforeBar(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '+Bar'
   barGroup = plotVars['LayerValues']['Group']
-  bar = plotVars['LayerValues']['Bar']
-  barList = plotVars['Groups'][barGroup]
+  if 'Labels' in plotVars and 'Bar' in plotVars['Labels']:
+    bar = plotVars['Labels']['Bar'] % plotVars['ColumnToValue']
+  else:
+    bar = plotVars['LayerValues']['Bar']
+  barList = plotVars['BarStruct'][-1]
   if bar not in plotVars['Bars']:
     plotVars['Bars'].append(bar)
   # find index and add bar lists for empty bars and this one
@@ -228,8 +370,11 @@ def PlotFnBarStack(plotVars):
   if plotVars['TraceFunctionCalls']:
     print 'BarStack'
   barGroup = plotVars['LayerValues']['Group']
-  stackList = plotVars['Groups'][barGroup][-1]
-  stackVal = plotVars['LayerValues']['Stack'][0]
+  stackList = plotVars['BarStruct'][-1][-1]
+  if 'Labels' in plotVars and 'Stack' in plotVars['Labels']:
+    stackVal = plotVars['Labels']['Stack'] % plotVars['ColumnToValue']
+  else:
+    stackVal = plotVars['LayerValues']['Stack'][0]
   stackHeight = plotVars['LayerValues']['Stack'][1]
 
   if stackVal not in plotVars['Stacks']:
