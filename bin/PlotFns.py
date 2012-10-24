@@ -79,11 +79,13 @@ def PlotFnBeforeSubplot(plotVars):
   ax.spines['top'].set_color('none')
   ax.spines['right'].set_color('none')
 
+  if 'LegendLocation' not in plotVars:
+    plotVars['LegendLocation'] = None
+
   # create titles for subplot, xaxis, yaxis, and legend
   if "Subplot" in plotVars['Labels']:
     plotVars['SubplotTitle'] = plotVars['Labels']['Subplot'] % plotVars['ColumnToValue']
-  if "Line" in plotVars['Labels']:
-    plotVars['LegendTitle'] = plotVars['Labels']['Line'] % plotVars['ColumnToValue']
+
   if "XAxis" in plotVars['Labels']:
     plotVars['XLabel'] = plotVars['Labels']['XAxis'] % plotVars['ColumnToValue']
     if 'XLabelOnLast' in plotVars and plotVars['XLabelOnLast']:
@@ -92,14 +94,10 @@ def PlotFnBeforeSubplot(plotVars):
   if "YAxis" in plotVars['Labels']:
     plotVars['YLabel'] = plotVars['Labels']['YAxis'] % plotVars['ColumnToValue']
 
-  if 'LegendLocation' not in plotVars:
-    plotVars['LegendLocation'] = None
-
   # start collecting limits on axes
   plotVars['XAxisLimits'] = [None, None]
   plotVars['YAxisLimits'] = [None, None]
 
-  plotVars['LineCount'] = 0
 
 def PlotFnAfterSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -122,6 +120,15 @@ def PlotFnAfterSubplot(plotVars):
 # Line
 #
 ###############################
+
+def PlotFnBeforeLineSubplot(plotVars):
+  if plotVars['TraceFunctionCalls']:
+    print '+LineSubplot'
+  PlotFnBeforeSubplot(plotVars)
+
+  if "Line" in plotVars['Labels']:
+    plotVars['LegendTitle'] = plotVars['Labels']['Line'] % plotVars['ColumnToValue']
+  plotVars['LineCount'] = 0
 
 def PlotFnBeforeLine(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -172,36 +179,73 @@ def PlotFnLinePoint(plotVars):
 
 def PlotFnBeforeBarSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
-    print '-BarSubplot'
+    print '+BarSubplot'
+  PlotFnBeforeSubplot(plotVars)
+
+  # remember everything and process entire plot at end of subplot
+  # Groups = {group label : bars}
+  # bars = [[stacks from bottom]] (list of bars, each bar a list of stacks)
+  plotVars['Groups'] = {}
+  # keep a list of bars and stacks to keep order and labels consistent
+  plotVars['Bars'] = []
+  plotVars['Stacks'] = []
 
 def PlotFnAfterBarSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
-    print '+BarSubplot'
+    print '-BarSubplot'
+  PlotFnAfterSubplot(plotVars)
 
 def PlotFnBeforeBarGroup(plotVars):
   if plotVars['TraceFunctionCalls']:
-    print '-BarGroup'
+    print '+BarGroup'
+  barGroup = plotVars['LayerValues']['Group']
+  assert barGroup not in plotVars['Groups']
+  plotVars['Groups'][barGroup] = []
 
 def PlotFnAfterBarGroup(plotVars):
   if plotVars['TraceFunctionCalls']:
-    print '+BarGroup'
+    print '-BarGroup'
 
 def PlotFnBeforeBar(plotVars):
   if plotVars['TraceFunctionCalls']:
-    print '-Bar'
+    print '+Bar'
+  barGroup = plotVars['LayerValues']['Group']
+  bar = plotVars['LayerValues']['Bar']
+  barList = plotVars['Groups'][barGroup]
+  if bar not in plotVars['Bars']:
+    plotVars['Bars'].append(bar)
+  # find index and add bar lists for empty bars and this one
+  l = len(barList)
+  idx = plotVars['Bars'].index(bar)
+  for i in range(idx - l + 1): # +1 for this bar
+    barList.append([])
 
 def PlotFnAfterBar(plotVars):
   if plotVars['TraceFunctionCalls']:
-    print '+Bar'
+    print '-Bar'
 
 def PlotFnBarStack(plotVars):
   if plotVars['TraceFunctionCalls']:
     print 'BarStack'
+  barGroup = plotVars['LayerValues']['Group']
+  stackList = plotVars['Groups'][barGroup][-1]
+  stackVal = plotVars['LayerValues']['Stack'][0]
+  stackHeight = plotVars['LayerValues']['Stack'][1]
+
+  if stackVal not in plotVars['Stacks']:
+    plotVars['Stacks'].append(stackVal)
+  # find index and add 0.0 height stacks for empty stacks
+  l = len(stackList)
+  idx = plotVars['Stacks'].index(stackVal)
+  for i in range(idx - l):
+    stackList.append(0.0)
+  # now add this height
+  stackList.append(stackHeight)
 
 defaultFns = {
   'Line' : {
     'Figure'  : (PlotFnBeforeFigure, PlotFnAfterFigure,),
-    'Subplot' : (PlotFnBeforeSubplot, PlotFnAfterSubplot,),
+    'Subplot' : (PlotFnBeforeLineSubplot, PlotFnAfterSubplot,),
     'Line'    : (PlotFnBeforeLine, PlotFnAfterLine,),
     'Point'   : (PlotFnLinePoint,),
     'Init'    : (PlotFnInit,),
