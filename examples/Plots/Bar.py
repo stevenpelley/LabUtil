@@ -58,15 +58,6 @@ plotVars['Labels']= {
   'YAxis'   : "Count?",
 }
 
-# Name, Number, Color, Texture
-# Name = label under each bar
-# Number = numbers and ticks on x-axis
-# color, texture = each bar gets a color or texture with legend
-plotVars['BarLabel'] = 'Name'
-
-# percent of whitespace between groups
-plotVars['GroupWhiteSpace'] = .2
-
 plotVars['LegendLocation'] = 'upper left'
 
 plotVars['OutputDir'] = 'Bar'

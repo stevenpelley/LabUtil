@@ -201,6 +201,10 @@ def PlotFnBeforeBarSubplot(plotVars):
   plotVars['BarHatch']   = False
   plotVars['BarLabel']   = True
 
+  plotVars['GroupWhiteSpace'] = .2
+  plotVars['GroupLabelSpace'] = .2
+  plotVars['BarLabelRotation'] = 30
+
 def PlotFnAfterBarSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '-BarSubplot'
@@ -288,7 +292,7 @@ def PlotFnAfterBarSubplot(plotVars):
         labels.append(label)
     # stack artists - start at the last stacks to go top down
     if (stackColor or stackTexture) and numStacks > 1:
-      for stackIDX in range(numStacks):
+      for stackIDX in range(numStacks-1,-1,-1):
         color = "None"
         hatch = "None"
         label = stacks[stackIDX]
@@ -318,12 +322,12 @@ def PlotFnAfterBarSubplot(plotVars):
         ticks.append(barStart)
         tickLabels.append(bars[j])
     ax.set_xticks(ticks)
-    ax.set_xticklabels(tickLabels, rotation=30, va='top', ha='right')
+    ax.set_xticklabels(tickLabels, rotation=plotVars['BarLabelRotation'], va='top', ha='right')
     ax.tick_params(bottom=False)
 
   # set labels for groups
   (bottom, top) = ax.get_ylim()
-  groupLabelY = -top*.2
+  groupLabelY = -top*plotVars['GroupLabelSpace']
   for i, group in enumerate(groups):
     groupLabelX = i + whiteSpace + (1.0-whiteSpace)/2.0
     plotVars['ExtraArtists'].append(ax.text(groupLabelX, groupLabelY, groups[i], va="top", ha="center"))
