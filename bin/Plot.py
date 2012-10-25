@@ -152,7 +152,7 @@ def endAllLayers(plotVars):
   plotVars['LayerFns']['Fini'][0](plotVars)
 
 # return all layers who's value has changed since the last row
-# never return the "Point" layer
+# never return the "Point" layer (last layer)
 # make sure to account for empty layer groups:
 #   an empty layer changes if the layer above changes
 #   (e.g. empty subplot changes when figure changes)

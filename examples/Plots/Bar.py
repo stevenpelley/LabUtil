@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# create a bar plot with 1 figure, 2 subplots, 3 groups, 4 bars, and 3 stacks per bar
+# create a bar plot
 
 # subplots can be clones
 # each group represents a base
@@ -13,15 +13,16 @@ import random
 columns = ("Clone", "Base", "Multiplier", "Exponent", "Height",)
 rows = []
 
-clones = [1.0] # figures
+clones = [1.0, 2.0] # figures
 #clones = [1.0,2.0] # figures
 #bases = [1.0] # groups
-bases = [1.0, 2.0, 3.0] # groups
+multipliers = [1.0,2.0,3.0,4.0] # bars
+bases = [1.0, 2.0] # groups
 exps = [1.0,2.0,3.0] # stacks
 #exps = [1.0] # stacks
 for clone in clones:
   for base in bases:
-    for multiplier in [1.0, 2.0, 3.0,4.0]:
+    for multiplier in multipliers:
       for exp in exps:
         val = multiplier * (base**exp)
         rows.append( (clone, base, multiplier,exp,val,))

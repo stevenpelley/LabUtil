@@ -205,6 +205,9 @@ def PlotFnBeforeBarSubplot(plotVars):
   plotVars['GroupLabelSpace'] = .2
   plotVars['BarLabelRotation'] = 30
 
+  plotVars['YLim'] = (None, None)
+  plotVars['XLim'] = (None, None)
+
 def PlotFnAfterBarSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '-BarSubplot'
@@ -245,12 +248,16 @@ def PlotFnAfterBarSubplot(plotVars):
   # bars start at groupIDX + whiteSpace + barIDX*width
   # group labels at groupIDX + whitespace + (1.0-whitespace)/2.0
   # bar labels at barStart + width/2
+  topLim = None
+  if 'YLim' in plotVars:
+    topLim = plotVars['YLim'][1]
   for barIDX in range(numBars):
     bottoms = np.zeros(numGroups)
+    realHeight = np.zeros(numGroups)
+    barStart = np.arange(numGroups) + whiteSpace + (barIDX*barWidth)
     for stackIDX in range(numStacks):
       heights = np.array(byGroups[barIDX][stackIDX])
       # create array of bar start locations
-      barStart = np.arange(numGroups) + whiteSpace + (barIDX*barWidth)
 
       # plot this stack across all groups
       # set a color and texture
@@ -268,9 +275,24 @@ def PlotFnAfterBarSubplot(plotVars):
         elif barTexture:
           idx = barIDX
         texture = plotVars['BarTextures'][idx % len(plotVars['BarTextures'])]
-      ax.bar(barStart, heights, barWidth, bottom=bottoms, color=color, hatch=texture)
+      plotHeights = np.array(heights)
+      if topLim != None:
+        for i in range(len(plotHeights)):
+          if plotHeights[i] + bottoms[i] > topLim:
+            plotHeights[i] = topLim - bottoms[i]
+      ax.bar(barStart, plotHeights, barWidth, bottom=bottoms, color=color, hatch=texture)
 
-      bottoms = bottoms + heights
+      bottoms = bottoms + plotHeights
+      realHeight = realHeight + heights
+
+    # find any bars that went over the y-axis limit and plot their actual height as text
+    if topLim != None:
+      for i, height in enumerate(realHeight):
+        if height > topLim:
+          # plot it!
+          thisStart = barStart[i]
+          plotStr = "{:.0f}".format(height)
+          plotVars['ExtraArtists'].append(ax.text(thisStart+(barWidth/2.0), topLim*1.025, plotStr, va="bottom",ha="center"))
 
   # set up the legend
   if stackColor or stackTexture or barColor or barTexture:
@@ -327,10 +349,34 @@ def PlotFnAfterBarSubplot(plotVars):
 
   # set labels for groups
   (bottom, top) = ax.get_ylim()
-  groupLabelY = -top*plotVars['GroupLabelSpace']
+  if 'YLim' in plotVars:
+    (newBottom, newTop) = plotVars['YLim']
+    if newBottom == None:
+      newBottom = bottom
+    if newTop == None:
+      newTop = top
+    diff = newTop - newBottom
+  groupLabelY = newBottom - diff*plotVars['GroupLabelSpace']
   for i, group in enumerate(groups):
     groupLabelX = i + whiteSpace + (1.0-whiteSpace)/2.0
     plotVars['ExtraArtists'].append(ax.text(groupLabelX, groupLabelY, groups[i], va="top", ha="center"))
+
+  if 'XLim' in plotVars:
+    (newLeft, newRight) = plotVars['XLim']
+    [left, right] = plotVars['Axes'].get_xlim()
+    if newLeft == None:
+      newLeft = left
+    if newRight == None:
+      newRight = right
+    plotVars['Axes'].set_xlim(newLeft, newRight)
+  if 'YLim' in plotVars:
+    (newBottom, newTop) = plotVars['YLim']
+    [bottom, top] = plotVars['Axes'].get_ylim()
+    if newBottom == None:
+      newBottom = bottom
+    if newTop == None:
+      newTop = top
+    plotVars['Axes'].set_ylim(newBottom, newTop)
 
   PlotFnAfterSubplot(plotVars)
 
