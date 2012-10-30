@@ -63,7 +63,7 @@ def PlotFnAfterFigure(plotVars):
       if i != len(plotVars['LayerGroups']['Figure'])-1: # not last
         filename += "__"
   filename += ".pdf"
-  fig.savefig(plotVars['OutputDir'] + "/" + filename, format="pdf", transparent=True, bbox_inches="tight", bbox_extra_artists=extraArtists)
+  fig.savefig(plotVars['OutputDir'] + "/" + filename, transparent=True, bbox_inches="tight", bbox_extra_artists=extraArtists)
 
 def PlotFnBeforeSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -207,6 +207,7 @@ def PlotFnBeforeBarSubplot(plotVars):
 
   plotVars['YLim'] = (None, None)
   plotVars['XLim'] = (None, None)
+  plotVars['BarLog'] = False
 
 def PlotFnAfterBarSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -217,7 +218,6 @@ def PlotFnAfterBarSubplot(plotVars):
   bars = plotVars['Bars']
   stacks = plotVars['Stacks']
   barStruct = plotVars['BarStruct']
-  barLabelType = plotVars['BarLabel']
   whiteSpace = plotVars['GroupWhiteSpace']
   numGroups = len(groups)
   numBars = len(bars)
@@ -231,6 +231,9 @@ def PlotFnAfterBarSubplot(plotVars):
   barLabel     = plotVars['BarLabel']  
   assert not (stackColor and barColor)
   assert not (stackTexture and barTexture)
+
+  if 'BarLog' not in plotVars:
+    plotVars['BarLog'] = False
 
   # first transform into a list format [bar][stack] -> stacks of each group
   # example: byGroups[0][0] gives a list of stack heights in first bar, bottom stack each group
@@ -280,8 +283,11 @@ def PlotFnAfterBarSubplot(plotVars):
         for i in range(len(plotHeights)):
           if plotHeights[i] + bottoms[i] > topLim:
             plotHeights[i] = topLim - bottoms[i]
-      ax.bar(barStart, plotHeights, barWidth, bottom=bottoms, color=color, hatch=texture)
-
+      if stackIDX == 0 and plotVars['BarLog']:
+        plotBottoms = None
+      else:
+        plotBottoms = bottoms
+      ax.bar(barStart, plotHeights, barWidth, bottom=plotBottoms, color=color, hatch=texture, log=plotVars['BarLog'])
       bottoms = bottoms + plotHeights
       realHeight = realHeight + heights
 
@@ -295,7 +301,7 @@ def PlotFnAfterBarSubplot(plotVars):
           plotVars['ExtraArtists'].append(ax.text(thisStart+(barWidth/2.0), topLim*1.025, plotStr, va="bottom",ha="center"))
 
   # set up the legend
-  if stackColor or stackTexture or barColor or barTexture:
+  if 'LegendTitle' in plotVars and (stackColor or stackTexture or barColor or barTexture):
     # this is a custom legend using proxy artists
     # artists are generated for legend support but not drawn on the axes
     artists = []
@@ -348,18 +354,14 @@ def PlotFnAfterBarSubplot(plotVars):
     ax.tick_params(bottom=False)
 
   # set labels for groups
-  (bottom, top) = ax.get_ylim()
-  if 'YLim' in plotVars:
-    (newBottom, newTop) = plotVars['YLim']
-    if newBottom == None:
-      newBottom = bottom
-    if newTop == None:
-      newTop = top
-    diff = newTop - newBottom
-  groupLabelY = newBottom - diff*plotVars['GroupLabelSpace']
-  for i, group in enumerate(groups):
-    groupLabelX = i + whiteSpace + (1.0-whiteSpace)/2.0
-    plotVars['ExtraArtists'].append(ax.text(groupLabelX, groupLabelY, groups[i], va="top", ha="center"))
+  if 'Group' in plotVars['Labels']:
+    # convert to axes coordinates
+    # x in data, y in axes
+    trans = matplotlib.transforms.blended_transform_factory(ax.transData, ax.transAxes)
+    (bottom, top) = ax.get_ylim()
+    for i, group in enumerate(groups):
+      groupLabelX = i + whiteSpace + (1.0-whiteSpace)/2.0
+      plotVars['ExtraArtists'].append(ax.text(groupLabelX, -plotVars['GroupLabelSpace'], groups[i], va="top", ha="center", transform=trans))
 
   if 'XLim' in plotVars:
     (newLeft, newRight) = plotVars['XLim']
