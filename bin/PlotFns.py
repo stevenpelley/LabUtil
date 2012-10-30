@@ -40,6 +40,7 @@ def PlotFnBeforeFigure(plotVars):
     plotVars['FigureTitle'] = plotVars['Labels']['Figure'] % plotVars['ColumnToValue']
   # default subplot dimensions
   plotVars['SubplotDimensions'] = (len(plotVars['SubplotsInFigure'][plotVars['LayerValues']['Figure']]),1)
+  plotVars['Axes'] = None
 
 def PlotFnAfterFigure(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -181,7 +182,8 @@ def PlotFnLinePoint(plotVars):
 def PlotFnBeforeBarSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '+BarSubplot'
-  PlotFnBeforeSubplot(plotVars)
+  if 'BeforeBarSubplot_super' not in plotVars:
+    PlotFnBeforeSubplot(plotVars)
 
   # remember everything and process entire plot at end of subplot
   # Groups = {group label : bars}
@@ -208,6 +210,9 @@ def PlotFnBeforeBarSubplot(plotVars):
   plotVars['YLim'] = (None, None)
   plotVars['XLim'] = (None, None)
   plotVars['BarLog'] = False
+
+  plotVars['RelativeBarWidth'] = 1.0
+  plotVars['BarOffset'] = 0.0
 
 def PlotFnAfterBarSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -246,7 +251,7 @@ def PlotFnAfterBarSubplot(plotVars):
         byGroups[-1][-1].append(barStruct[k][i][j])
 
   # width of each bar = (1-whiteSpace)/numBars
-  barWidth = (1.0-whiteSpace)/float(numBars)
+  barWidth = (1.0-whiteSpace)/float(numBars) 
 
   # bars start at groupIDX + whiteSpace + barIDX*width
   # group labels at groupIDX + whitespace + (1.0-whitespace)/2.0
@@ -287,7 +292,7 @@ def PlotFnAfterBarSubplot(plotVars):
         plotBottoms = None
       else:
         plotBottoms = bottoms
-      ax.bar(barStart, plotHeights, barWidth, bottom=plotBottoms, color=color, hatch=texture, log=plotVars['BarLog'])
+      ax.bar(barStart, plotHeights, barWidth * plotVars['RelativeBarWidth'], bottom=plotBottoms, color=color, hatch=texture, log=plotVars['BarLog'])
       bottoms = bottoms + plotHeights
       realHeight = realHeight + heights
 
@@ -334,7 +339,14 @@ def PlotFnAfterBarSubplot(plotVars):
         artists.append(matplotlib.patches.Rectangle((0,0),1,1,color=color,hatch=hatch))
         labels.append(label)
     if len(artists) > 0:
-      lg = ax.legend(artists, labels, title="", loc = plotVars['LegendLocation'])
+      if 'LegendBBox' in plotVars:
+        bbox = plotVars['LegendBBox']
+      else:
+        bbox = None
+      lg = ax.legend(artists, labels, title="", loc = plotVars['LegendLocation'], bbox_to_anchor=bbox)
+      plotVars['ExtraArtists'].append(lg)
+      for item in lg.get_lines() + lg.get_patches() + lg.get_texts() + [lg.get_title()]:
+        plotVars['ExtraArtists'].append(item)
       lg.draw_frame(False)
       plotVars['Legend'] = lg
 
