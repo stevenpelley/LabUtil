@@ -5,6 +5,11 @@
 # rows: a list of tuples, where each tuple is the values corresponding to cols
 
 class Relation:
+  # constructor
+  # for now have:
+  # default (empty relation)
+  # copy (copies rows and cols)
+  # (tuple(cols), list(tuple(rows)),)
   def __init__(self, arg=None):
     if arg == None:
       self.rows = []
@@ -39,7 +44,8 @@ class Relation:
     return tuple(newRow)
 
   # projection on relation
-  # modifies the relation!
+  # A projection collects the specified columns of each tuple in the relation
+  # include only those fields listed in projectFields
   def project(self, projectFields):
     newRows = []
     for row in self.rows:
@@ -48,9 +54,9 @@ class Relation:
     self.rows = newRows
 
   # perform a selection (essentially a filter)
+  # A selection collects all columns of specified rows
   # selectFn takes in (row, tuple of vals) returns True to keep row, False to pass
   # selectFnColInputs determines which column values are the inputs to selectFn
-  # modifies the relation!
   def select(self, selectFn, selectFnColInputs):
     innerSelectFn = lambda row: selectFn(row, projectRow(self.cols, row, selectFnColInputs))
     self.rows = filter(innerSelectFn, self.rows)
@@ -72,6 +78,19 @@ class Relation:
   #   (for unmatched rows set the right relation's fields to None
   #
   # error if both relations have a common non-join index column name
+  #
+  # description: A join combines 2 relations into 1 by matching tuples
+  # by the values of joinIndex.  The fields of joinIndex must exist in
+  # both the left and right relations.  On a match, the non-joinIndex
+  # column values will be included from the left and right tuples
+  #
+  # An outer join always includes all rows from the left relation
+  # Rows in the left relation that do not match receive None for columns
+  # from the right relation
+  #
+  # if multiple matches occur the cartesian product of rows with that
+  # joinIndex key from the left and right relations is produced
+  # (i.e.) all possible matches are created between left and right
   def leftHashJoin(self, otherRelation, joinIndex, inner=True):
     # determine non-index columns from each relation
     # assert that no names are shared
@@ -115,7 +134,7 @@ class Relation:
     return False
 
   # return True if the relations contain the same set of keys based off keyCols
-  # if assert then die if not true
+  # if assert then die if not a match
   def keysMatch(self, otherRelation, keyCols, **kwargs):
     myKeySet = set()
     otherKeySet = set()
@@ -163,17 +182,18 @@ class Relation:
     self.rows = newRows
 
 
+# multi-way inner join between several relations
+# relations is a list of Relations
 # joinIndex is a tuple of columns that every dataset shares
-# dataSets is a list of Relations
 # return a new Relation (do not modify input relations)
-def joinDataSetsOrDie(Relations, joinIndex):
-  for rel in Relations:
+def joinDataSetsOrDie(relations, joinIndex):
+  for rel in relations:
     assert not rel.hasDuplicates(joinIndex)
 
-  assert len(Relations) > 0, "Must have at least 1 relation to join"
-  newRel = Relation(Relations[0])
+  assert len(relations) > 0, "Must have at least 1 relation to join"
+  newRel = Relation(relations[0])
   if len(dataSets) > 1:
-    for otherRelation in Relations[1:]:
+    for otherRelation in relations[1:]:
       newRel.keysMatch(otherRelation, joinIndex, assert=True)
       newRel.leftHashJoin(otherRelation, joinIndex)
   return newRel
