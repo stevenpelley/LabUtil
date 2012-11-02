@@ -63,14 +63,29 @@ class Relation:
 
   # generate new column for each tuple
   # generateFn takes in (row, tuple of vals) returns new column value
-  # generateFnColInputs determines which column values are inputs to selectFn
+  # generateFnColInputs determines which column values are inputs to generateFn
   # modifies the relation!
   def generateCol(self, colName, generateFn, generateFnColInputs):
-    def innserGenerateMap(row):
+    def innerGenerateMap(row):
       newVal = generateFn(row, projectRow(self.cols, row, generateFnColInputs))
       return row + (newVal,)
     self.rows = map(innerGenerateMap, self.rows)
     self.cols = self.cols + (colName,)
+
+  # generate multiple new rows from each row
+  # allows a number of new columns to be created
+  # generateFn takes in (row, tuple of vals) returns list of tuples of new columns vals
+  # generateFnColInputs determines which column values are inputs to generateFn
+  # each new row will be oldRow + newColVals for newColVals in return value of generateFn
+  def splitAndGenerateCols(self, colNames, generateFn, generateFnColInputs):
+    newRows = []
+    for row in self.rows:
+      for newColVals in generateFn(row, projectRow(self.cols, row, generateFnColInputs)):
+        assert len(newColVals) == len(colNames), "number of new values must match number of new columns"
+        assert isinstance(newColVals, tuple), "new values must be in a tuple"
+        newRows.append(row + newColVals)
+    self.rows = newRows
+    self.cols = self.cols + colNames
 
   # left hash join
   # relations 1 and 2, join on columns joinIndex
