@@ -195,7 +195,7 @@ def PlotFnBeforeBarSubplot(plotVars):
   plotVars['Stacks'] = []
 
   plotVars['BarColors'] = ["b", "g", "r", "y",]
-  plotVars['BarTextures'] = ['/', '\\', '//', '\\\\', 'x']
+  plotVars['BarTextures'] = [' ', '/', '\\', '//', '\\\\', 'x']
 
   plotVars['StackColor'] = True
   plotVars['StackHatch'] = True
@@ -260,6 +260,7 @@ def PlotFnAfterBarSubplot(plotVars):
   if 'YLim' in plotVars:
     topLim = plotVars['YLim'][1]
   for barIDX in range(numBars):
+    barLabel = bars[barIDX]
     bottoms = np.zeros(numGroups)
     realHeight = np.zeros(numGroups)
     barStart = np.arange(numGroups) + whiteSpace + (barIDX*barWidth)
@@ -292,7 +293,7 @@ def PlotFnAfterBarSubplot(plotVars):
         plotBottoms = None
       else:
         plotBottoms = bottoms
-      ax.bar(barStart, plotHeights, barWidth * plotVars['RelativeBarWidth'], bottom=plotBottoms, color=color, hatch=texture, log=plotVars['BarLog'])
+      ax.bar(barStart, plotHeights, barWidth * plotVars['RelativeBarWidth'], bottom=plotBottoms, color=color, hatch=texture, log=plotVars['BarLog'], label=barLabel)
       bottoms = bottoms + plotHeights
       realHeight = realHeight + heights
 
@@ -305,53 +306,61 @@ def PlotFnAfterBarSubplot(plotVars):
           plotStr = "{:.0f}".format(height)
           plotVars['ExtraArtists'].append(ax.text(thisStart+(barWidth/2.0), topLim*1.025, plotStr, va="bottom",ha="center"))
 
-  # set up the legend
-  if 'LegendTitle' in plotVars and (stackColor or stackTexture or barColor or barTexture):
-    # this is a custom legend using proxy artists
-    # artists are generated for legend support but not drawn on the axes
-    artists = []
-    labels = []
-    # bar artists
-    if (barColor or barTexture) and numBars > 1:
-      for barIDX in range(numBars):
-        color = "None"
-        hatch = "None"
-        label = bars[barIDX]
-        if barColor:
-          color = plotVars['BarColors'][barIDX % len(plotVars['BarColors'])]
-        if barTexture:
-          hatch = plotVars['BarTextures'][barIDX % len(plotVars['BarTextures'])]
-          # BUG in matplotlib -- legend will not show both hatch and fill
-          # default to hatch
-          color = "None"
-        artists.append(matplotlib.patches.Rectangle((0,0),1,1,color=color,hatch=hatch))
-        labels.append(label)
-    # stack artists - start at the last stacks to go top down
-    if (stackColor or stackTexture) and numStacks > 1:
-      for stackIDX in range(numStacks-1,-1,-1):
-        color = "None"
-        hatch = "None"
-        label = stacks[stackIDX]
-        if stackColor:
-          color = plotVars['BarColors'][stackIDX % len(plotVars['BarColors'])]
-        if stackTexture:
-          hatch = plotVars['BarTextures'][stackIDX % len(plotVars['BarTextures'])]
-          # BUG in matplotlib -- legend will not show both hatch and fill
-          # default to hatch
-          color = "None"
-        artists.append(matplotlib.patches.Rectangle((0,0),1,1,color=color,hatch=hatch))
-        labels.append(label)
-    if len(artists) > 0:
-      if 'LegendBBox' in plotVars:
-        bbox = plotVars['LegendBBox']
-      else:
-        bbox = None
-      lg = ax.legend(artists, labels, title=plotVars['LegendTitle'], loc = plotVars['LegendLocation'], bbox_to_anchor=bbox)
-      plotVars['ExtraArtists'].append(lg)
-      for item in lg.get_lines() + lg.get_patches() + lg.get_texts() + [lg.get_title()]:
-        plotVars['ExtraArtists'].append(item)
-      lg.draw_frame(False)
-      plotVars['Legend'] = lg
+  # legend by hand
+  lg = ax.legend(title=plotVars['LegendTitle'], loc = plotVars['LegendLocation'])
+  plotVars['ExtraArtists'].append(lg)
+  for item in lg.get_lines() + lg.get_patches() + lg.get_texts() + [lg.get_title()]:
+    plotVars['ExtraArtists'].append(item)
+  lg.draw_frame(False)
+  plotVars['Legend'] = lg
+
+  ## set up the legend
+  #if 'LegendTitle' in plotVars and (stackColor or stackTexture or barColor or barTexture):
+  #  # this is a custom legend using proxy artists
+  #  # artists are generated for legend support but not drawn on the axes
+  #  artists = []
+  #  labels = []
+  #  # bar artists
+  #  if (barColor or barTexture) and numBars > 1:
+  #    for barIDX in range(numBars):
+  #      color = "None"
+  #      hatch = "None"
+  #      label = bars[barIDX]
+  #      if barColor:
+  #        color = plotVars['BarColors'][barIDX % len(plotVars['BarColors'])]
+  #      if barTexture:
+  #        hatch = plotVars['BarTextures'][barIDX % len(plotVars['BarTextures'])]
+  #        # BUG in matplotlib -- legend will not show both hatch and fill
+  #        # default to hatch
+  #        color = "None"
+  #      artists.append(matplotlib.patches.Rectangle((0,0),1,1,color=color,hatch=hatch))
+  #      labels.append(label)
+  #  # stack artists - start at the last stacks to go top down
+  #  if (stackColor or stackTexture) and numStacks > 1:
+  #    for stackIDX in range(numStacks-1,-1,-1):
+  #      color = "None"
+  #      hatch = "None"
+  #      label = stacks[stackIDX]
+  #      if stackColor:
+  #        color = plotVars['BarColors'][stackIDX % len(plotVars['BarColors'])]
+  #      if stackTexture:
+  #        hatch = plotVars['BarTextures'][stackIDX % len(plotVars['BarTextures'])]
+  #        # BUG in matplotlib -- legend will not show both hatch and fill
+  #        # default to hatch
+  #        color = "None"
+  #      artists.append(matplotlib.patches.Rectangle((0,0),1,1,color=color,hatch=hatch))
+  #      labels.append(label)
+  #  if len(artists) > 0:
+  #    if 'LegendBBox' in plotVars:
+  #      bbox = plotVars['LegendBBox']
+  #    else:
+  #      bbox = None
+  #    lg = ax.legend(artists, labels, title=plotVars['LegendTitle'], loc = plotVars['LegendLocation'], bbox_to_anchor=bbox)
+  #    plotVars['ExtraArtists'].append(lg)
+  #    for item in lg.get_lines() + lg.get_patches() + lg.get_texts() + [lg.get_title()]:
+  #      plotVars['ExtraArtists'].append(item)
+  #    lg.draw_frame(False)
+  #    plotVars['Legend'] = lg
 
   # set up labels for bars
   ax.minorticks_off()
