@@ -321,6 +321,9 @@ def PlotFnAfterBarSubplot(plotVars):
           color = plotVars['BarColors'][barIDX % len(plotVars['BarColors'])]
         if barTexture:
           hatch = plotVars['BarTextures'][barIDX % len(plotVars['BarTextures'])]
+          # BUG in matplotlib -- legend will not show both hatch and fill
+          # default to hatch
+          color = "None"
         artists.append(matplotlib.patches.Rectangle((0,0),1,1,color=color,hatch=hatch))
         labels.append(label)
     # stack artists - start at the last stacks to go top down
@@ -343,7 +346,7 @@ def PlotFnAfterBarSubplot(plotVars):
         bbox = plotVars['LegendBBox']
       else:
         bbox = None
-      lg = ax.legend(artists, labels, title="", loc = plotVars['LegendLocation'], bbox_to_anchor=bbox)
+      lg = ax.legend(artists, labels, title=plotVars['LegendTitle'], loc = plotVars['LegendLocation'], bbox_to_anchor=bbox)
       plotVars['ExtraArtists'].append(lg)
       for item in lg.get_lines() + lg.get_patches() + lg.get_texts() + [lg.get_title()]:
         plotVars['ExtraArtists'].append(item)
@@ -364,6 +367,8 @@ def PlotFnAfterBarSubplot(plotVars):
     ax.set_xticks(ticks)
     ax.set_xticklabels(tickLabels, rotation=plotVars['BarLabelRotation'], va='top', ha='right')
     ax.tick_params(bottom=False)
+  else:
+    ax.get_xaxis().set_ticks([])
 
   # set labels for groups
   if 'Group' in plotVars['Labels']:
