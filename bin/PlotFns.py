@@ -128,6 +128,10 @@ def PlotFnBeforeLineSubplot(plotVars):
     print '+LineSubplot'
   PlotFnBeforeSubplot(plotVars)
 
+  plotVars['LineColors'] = ['k', 'r', 'b']
+  plotVars['LineStyles]' = ['-', '--', '-.', ":"]
+  plotVars['LineMarkers'] = ['o','^','s','*','D']
+
   if "Line" in plotVars['Labels']:
     plotVars['LegendTitle'] = plotVars['Labels']['Line'] % plotVars['ColumnToValue']
   plotVars['LineCount'] = 0
@@ -135,9 +139,9 @@ def PlotFnBeforeLineSubplot(plotVars):
 def PlotFnBeforeLine(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '+line'
-  lineStyles = ['-', '--', '-.', ":"]
-  lineColors = ["b", "g", "r"]
-  lineMarkers = ['o','^','s','*','D']
+  lineColors  = plotVars['LineColors']
+  lineStyles  = plotVars['LineStyles']
+  lineMarkers = plotVars['LineMarkers']
 
   # set line label
   label = ""
@@ -260,7 +264,7 @@ def PlotFnAfterBarSubplot(plotVars):
   if 'YLim' in plotVars:
     topLim = plotVars['YLim'][1]
   for barIDX in range(numBars):
-    barLabel = bars[barIDX]
+    thisBarLabel = bars[barIDX]
     bottoms = np.zeros(numGroups)
     realHeight = np.zeros(numGroups)
     barStart = np.arange(numGroups) + whiteSpace + (barIDX*barWidth)
@@ -293,7 +297,7 @@ def PlotFnAfterBarSubplot(plotVars):
         plotBottoms = None
       else:
         plotBottoms = bottoms
-      ax.bar(barStart, plotHeights, barWidth * plotVars['RelativeBarWidth'], bottom=plotBottoms, color=color, hatch=texture, log=plotVars['BarLog'], label=barLabel)
+      ax.bar(barStart, plotHeights, barWidth * plotVars['RelativeBarWidth'], bottom=plotBottoms, color=color, hatch=texture, log=plotVars['BarLog'], label=thisBarLabel)
       bottoms = bottoms + plotHeights
       realHeight = realHeight + heights
 
