@@ -19,7 +19,7 @@ import collections
 
 import CmpToKey
 
-import PlotFns
+from PlotFnsCommon import defaultFns
 
 ##################
 #
@@ -104,8 +104,8 @@ def setDefaultFns(plotVars):
         assert FnTup[0] != None
 
   else:
-    assert plotVars['DefaultFns'] in PlotFns.defaultFns, "don't have applicable default functions"
-    defaults = PlotFns.defaultFns[plotVars['DefaultFns']]
+    assert plotVars['DefaultFns'] in defaultFns, "don't have applicable default functions"
+    defaults = defaultFns[plotVars['DefaultFns']]
     for layer in layersPlusInit:
       if layer in defaults:
         if layer not in singleFunctionLayers: # start and end

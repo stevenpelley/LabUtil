@@ -44,7 +44,7 @@ import sys
 labUtilDir = '/home/sleimanf/tools/plot/LabUtil-groups/bin'
 sys.path.append(labUtilDir)
 import Plot
-import PlotFnsLine
+import PlotFnsBar
 
 plotVars = {}
 plotVars['Columns'] = columns
@@ -69,8 +69,8 @@ plotVars['Labels']= {
   'YAxis'   : 'this is y',
 }
 
-plotVars['OutputDir'] = 'SimpleLine'
-plotVars['DefaultFns'] = 'Line'
+plotVars['OutputDir'] = 'SimpleBar'
+plotVars['DefaultFns'] = 'BarStacked100Pct'
 plotVars['XLabelOnLast'] = True
 
 plotVars['TraceFunctionCalls'] = True
