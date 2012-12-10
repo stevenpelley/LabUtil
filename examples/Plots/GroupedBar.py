@@ -53,28 +53,30 @@ plotVars['Columns'] = columns
 plotVars['Rows'] = rows
 
 # define the role of each column
-plotVars['Layers'] = ["Figure", "Subplot", "Series", "Point"]
+plotVars['Layers'] = ["Figure", "Subplot", "Group", "Series", "Point"]
 plotVars['LayerGroups'] = {
-  'Figure'  : ["Offset"],
+  'Figure'  : [],
   'Subplot' : ["Exponent"],
-  'Series'   : ["Slope"],
+  'Group'   : ["Offset"],
+  'Series'  : ["Slope"],
   'Point'   : ["XValue", "YValue"],
 }
 
 # labels can only replace with column values
 # for anything more complex must override
 plotVars['Labels']= {
-  'Figure'  : 'figure with offset: %(Offset)f',
+  'Figure'  : 'A fun figure',
   'Subplot' : 'subplot with exponent: %(Exponent)s',
-  'Series'   : 'Slope',
+  'Series'  : 'Slope',
   'XAxis'   : 'this is x',
   'YAxis'   : 'this is y',
 }
 
-plotVars['OutputDir'] = 'SimpleBar'
-plotVars['DefaultFns'] = 'BarStacked'
+plotVars['OutputDir'] = 'GroupedBar'
+plotVars['DefaultFns'] = 'GroupedBarInterleaved'
 plotVars['BarInterleaveOffset'] = 0.3
 plotVars['BarWidth'] = 0.3
+plotVars['GroupSeparation'] = 1
 plotVars['XLabelOnLast'] = True
 
 plotVars['TraceFunctionCalls'] = True

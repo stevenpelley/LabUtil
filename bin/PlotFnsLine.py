@@ -29,6 +29,12 @@ def BeforeSeries(plotVars):
     'color'     : plotVars['SeriesColor'],
     'marker'    : plotVars['SeriesMarker'],
   }
+
+###################################
+#
+# Default Fns
+#
+###################################
  
 Common.defaultFns['Line'] = {
     'Figure'  : (Common.BeforeFigure, Common.AfterFigure,),

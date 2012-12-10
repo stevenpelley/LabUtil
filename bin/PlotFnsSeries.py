@@ -15,11 +15,19 @@ import PlotFnsCommon as Common
 #
 ###############################
 
-def BeforeSubplot(plotVars):
-  if plotVars['TraceFunctionCalls']:
-    print '+SubplotSeries'
+#defined here so that other PlotFns can reuse it if need be
+def ResetSeriesVars(plotVars):
+  plotVars['SeriesInfo'] = []
+  plotVars['SeriesCount'] = 0
+  plotVars['XValsAreNumerical'] = True
+  plotVars['XtoInt'] = {} #Dict
+  plotVars['InttoX'] = [] #List works as a mapper for 0..n -> XVals
 
+def BeforeSubplot(plotVars):
   Common.BeforeSubplot(plotVars)
+
+  if plotVars['TraceFunctionCalls']:
+    print '+Subplot (Series)'
 
   plotVars['SeriesColors'] = ['k', 'r', 'b']
   plotVars['SeriesStyles'] = ['-', '--', '-.', ":"]
@@ -29,24 +37,38 @@ def BeforeSubplot(plotVars):
   if "Series" in plotVars['Labels']:
     plotVars['LegendTitle'] = plotVars['Labels']['Series'] % plotVars['ColumnToValue']
 
-  plotVars['PlotFunctionList'] = []
+  ResetSeriesVars(plotVars)
 
-  plotVars['SeriesCount'] = 0
-  plotVars['XValsAreNumerical'] = True
-  plotVars['XtoInt'] = {} #Dict
-  plotVars['InttoX'] = [] #List works as a mapper for 0..n -> XVals
+def numerizeXVals(plotVars):
+  for si in plotVars['SeriesInfo']:
+    si['xlabels'] = list(si['x'])
+    if plotVars['XValsAreNumerical'] == True:
+      continue
+    
+    xlabels = si['xlabels']
+    x = map(lambda val: plotVars['XtoInt'][val], xlabels) #replaces each xval by its int-value
+    y = si['y']
+    zipped = zip(x,y,xlabels)
+    zipped.sort() #sorts by x int-values
+    si['x'],si['y'],si['xlabels'] = zip(*zipped) #splits the zipped stuff back out
+
+def plotAllSeries(plotVars):
+  for si in plotVars['SeriesInfo']:
+    si['fn']( si['x'],si['y'],**si['kwargs'] )
+
+  if plotVars['XValsAreNumerical'] == False:
+    ax = plotVars['Axes']
+    ax.minorticks_off()
+    ax.set_xticks( range(len(plotVars['XtoInt'])) )
+    ax.set_xticklabels(plotVars['InttoX'])
+    ax.tick_params(bottom=True)
 
 def AfterSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
-    print '-SubplotSeries'
+    print '-Subplot (Series)'
 
-  for f,x,y,kwargs in plotVars['PlotFunctionList']:
-    if not plotVars['XValsAreNumerical'] == True:
-      #so tempted to write the next three statements as one line
-      x = map(lambda xval: plotVars['XtoInt'][xval], x) #replaces each x by its int-value
-      xAndy = zip(x,y).sort() #sorts by x
-      x,y = zip(*xAsIntsAndy) #splits x and y back up
-    f(x,y,**kwargs)
+  numerizeXVals(plotVars)
+  plotAllSeries(plotVars)
 
   Common.AfterSubplot(plotVars)
 
@@ -85,15 +107,23 @@ def AfterSeries(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '-Series'
 
-  plotVars['PlotFunctionList'].append( (plotVars['PlotFunction'],list(plotVars['XVals']),list(plotVars['YVals']),dict(plotVars['PlotFunctionKWArgs'])) ) #4-tuple
+  plotVars['SeriesInfo'].append( {
+    'fn' : plotVars['PlotFunction'],
+    'x'  : list(plotVars['XVals']),
+    'y'  : list(plotVars['YVals']),
+    'kwargs' : dict(plotVars['PlotFunctionKWArgs']),
+    
+    } )
 
 def Point(plotVars):
   if plotVars['TraceFunctionCalls']:
     print ' Point'
+
   plotVars['X'] = plotVars['ColumnToValue'][plotVars['LayerGroups']['Point'][0]]
   plotVars['Y'] = plotVars['ColumnToValue'][plotVars['LayerGroups']['Point'][1]]
   plotVars['XVals'].append(plotVars['X'])
   plotVars['YVals'].append(plotVars['Y'])
+
   if not plotVars['X'] in plotVars['XtoInt']:
     plotVars['XtoInt'][plotVars['X']] = len(plotVars['InttoX'])
     plotVars['InttoX'].append(plotVars['X'])
@@ -131,13 +161,25 @@ def PointAddCumulative(plotVars):
 
 def BeforeSubplotAdd100Pct(plotVars):
   if plotVars['TraceFunctionCalls']:
-    print '+SubplotSeries100Pct'
+    print '+Subplot (100Pct)'
 
   plotVars['YVals100Pct'] = []
 
+def AfterSubplotAdd100Pct(plotVars):
+  if plotVars['TraceFunctionCalls']:
+    print '-Subplot (100Pct)'
+
+  for si in plotVars['SeriesInfo']:
+    y = si['y']
+    for i,yval in enumerate(y):
+      if plotVars['YVals100Pct'][i] == 0:
+        y[i] = 0
+      else:
+        y[i] = yval * 100.0 / plotVars['YVals100Pct'][i]  
+
 def PointAdd100Pct(plotVars):
   if plotVars['TraceFunctionCalls']:
-    print ' Point100Pct'
+    print ' Point (100Pct)'
 
   #assumed to be called after Point
   #so, just appended a point
@@ -151,14 +193,3 @@ def PointAdd100Pct(plotVars):
 def Point100Pct(plotVars):
   Point(plotVars)
   PointAdd100Pct(plotVars)
-
-def AfterSubplotAdd100Pct(plotVars):
-  if plotVars['TraceFunctionCalls']:
-    print '-SubplotSeries100Pct'
-
-  for f,x,y,kwargs in plotVars['PlotFunctionList']:
-    for i,yval in enumerate(y):
-      if plotVars['YVals100Pct'][i] == 0:
-        y[i] = 0
-      else:
-        y[i] = yval * 100.0 / plotVars['YVals100Pct'][i]  
