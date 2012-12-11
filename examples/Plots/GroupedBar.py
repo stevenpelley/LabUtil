@@ -42,8 +42,8 @@ rows = newRows
 random.shuffle(rows)
 
 import sys
-#labUtilDir = '/home/spelley/work/LabUtil/bin'
-labUtilDir = '/home/sleimanf/tools/plot/LabUtil-groups/bin'
+labUtilDir = '/home/spelley/work/LabUtil/bin'
+#labUtilDir = '/home/sleimanf/tools/plot/LabUtil-groups/bin'
 sys.path.append(labUtilDir)
 import Plot
 import PlotFnsBar
