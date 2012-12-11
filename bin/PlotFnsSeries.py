@@ -33,6 +33,7 @@ def BeforeSubplot(plotVars):
   plotVars['SeriesStyles'] = ['-', '--', '-.', ":"]
   plotVars['SeriesMarkers'] = ['o','^','s','*','D']
   plotVars['SeriesTextures'] = [' ', '/', '\\', '//', '\\\\', 'x']
+  plotVars['SeriestoInt'] = {}
 
   if "Series" in plotVars['Labels']:
     plotVars['LegendTitle'] = plotVars['Labels']['Series'] % plotVars['ColumnToValue']
@@ -56,10 +57,11 @@ def plotAllSeries(plotVars):
   for si in plotVars['SeriesInfo']:
     si['fn']( si['x'],si['y'],**si['kwargs'] )
 
+def cleanUpXTicks(plotVars):
   if plotVars['XValsAreNumerical'] == False:
     ax = plotVars['Axes']
     ax.minorticks_off()
-    ax.set_xticks( range(len(plotVars['XtoInt'])) )
+    ax.set_xticks( range(len(plotVars['InttoX'])) )
     ax.set_xticklabels(plotVars['InttoX'])
     ax.tick_params(bottom=True)
 
@@ -69,6 +71,7 @@ def AfterSubplot(plotVars):
 
   numerizeXVals(plotVars)
   plotAllSeries(plotVars)
+  cleanUpXTicks(plotVars)
 
   Common.AfterSubplot(plotVars)
 
@@ -84,7 +87,15 @@ def BeforeSeries(plotVars):
     label += "%s" % (str(val),)
     if i != len(vals)-1:
       label += " "
-  plotVars['SeriesLabel'] = label
+
+  if label in plotVars['SeriestoInt']:
+    plotVars['SeriesLabel'] = None
+    plotVars['SeriesIntValue'] = plotVars['SeriestoInt'][label]
+  else:
+    plotVars['SeriesLabel'] = label
+    plotVars['SeriesIntValue'] = len(plotVars['SeriestoInt'])
+    plotVars['SeriestoInt'][label] = plotVars['SeriesIntValue']
+
 
   # set linestyle, color, and marker
   seriesColors   = plotVars['SeriesColors']
@@ -92,10 +103,10 @@ def BeforeSeries(plotVars):
   seriesMarkers  = plotVars['SeriesMarkers']
   seriesTextures = plotVars['SeriesTextures']
 
-  plotVars['SeriesStyle'] = seriesStyles[plotVars['SeriesCount'] % len(seriesStyles)]
-  plotVars['SeriesColor'] = seriesColors[plotVars['SeriesCount'] % len(seriesColors)]
-  plotVars['SeriesMarker'] = seriesMarkers[plotVars['SeriesCount'] % len(seriesMarkers)]
-  plotVars['SeriesTexture'] = seriesTextures[plotVars['SeriesCount'] % len(seriesTextures)]
+  plotVars['SeriesStyle'] = seriesStyles[plotVars['SeriesIntValue'] % len(seriesStyles)]
+  plotVars['SeriesColor'] = seriesColors[plotVars['SeriesIntValue'] % len(seriesColors)]
+  plotVars['SeriesMarker'] = seriesMarkers[plotVars['SeriesIntValue'] % len(seriesMarkers)]
+  plotVars['SeriesTexture'] = seriesTextures[plotVars['SeriesIntValue'] % len(seriesTextures)]
 
   # initialize x-y arrays for the series
   plotVars['XVals'] = []
@@ -112,7 +123,8 @@ def AfterSeries(plotVars):
     'x'  : list(plotVars['XVals']),
     'y'  : list(plotVars['YVals']),
     'kwargs' : dict(plotVars['PlotFunctionKWArgs']),
-    
+    'intvalue' : plotVars['SeriesIntValue'],
+    'label' : plotVars['SeriesLabel'],
     } )
 
 def Point(plotVars):

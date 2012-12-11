@@ -56,8 +56,10 @@ plotVars['Rows'] = rows
 plotVars['Layers'] = ["Figure", "Subplot", "Group", "Series", "Point"]
 plotVars['LayerGroups'] = {
   'Figure'  : [],
-  'Subplot' : ["Exponent"],
-  'Group'   : ["Offset"],
+  'Subplot' : [],
+  'Group'   : ["Exponent","Offset"],
+#  'Subplot' : ["Exponent"], #Alternatives
+#  'Group'   : ["Offset"],   #Alternatives
   'Series'  : ["Slope"],
   'Point'   : ["XValue", "YValue"],
 }
@@ -66,17 +68,17 @@ plotVars['LayerGroups'] = {
 # for anything more complex must override
 plotVars['Labels']= {
   'Figure'  : 'A fun figure',
-  'Subplot' : 'subplot with exponent: %(Exponent)s',
+#  'Subplot' : 'subplot with exponent: %(Exponent)s', #Alternatives
   'Series'  : 'Slope',
   'XAxis'   : 'this is x',
   'YAxis'   : 'this is y',
 }
 
 plotVars['OutputDir'] = 'GroupedBar'
-plotVars['DefaultFns'] = 'GroupedBarInterleaved'
+plotVars['DefaultFns'] = 'GroupedBarStacked'
 plotVars['BarInterleaveOffset'] = 0.3
 plotVars['BarWidth'] = 0.3
-plotVars['GroupSeparation'] = 1
+plotVars['GroupSeparation'] = 1 #try setting this to -2.5, for example
 plotVars['XLabelOnLast'] = True
 
 plotVars['TraceFunctionCalls'] = True

@@ -1,10 +1,5 @@
 #!/usr/bin/python
 
-import os
-import os.path
-import matplotlib
-import matplotlib.pyplot as plt
-import shutil
 import numpy as np
 
 import PlotFnsCommon as Common
@@ -12,7 +7,7 @@ import PlotFnsSeries as Series
 
 ###################################
 #
-# Common bar setup and functions
+# Common bar setup
 #
 ###################################
 
@@ -22,6 +17,7 @@ def BeforeSeries(plotVars):
 
   Series.BeforeSeries(plotVars)
 
+  #These are used in PlotFnsSeries.AfterSeries()
   plotVars['PlotFunction'] = plotVars['Axes'].bar
   plotVars['PlotFunctionKWArgs'] = {
     'label'     : plotVars['SeriesLabel'],
@@ -29,6 +25,14 @@ def BeforeSeries(plotVars):
     'bottom'    : 0,
     'width'     : plotVars.get('BarWidth', 0.8),
   }
+
+###################################
+#
+# These utility functions are to be called after all series are collected
+# ie. At the end of a subplot, or at the end of a group
+#
+###################################
+
 
 def StackBars(plotVars):
   #determine new bottoms
@@ -72,6 +76,7 @@ def OffsetX(plotVars,offset):
 ###################################
 #
 # Some useful combinations of bar fns
+# for plots without groups
 #
 ###################################
 
@@ -107,6 +112,22 @@ def Stacked100PctAfterSubplot(plotVars):
 # Bar groups
 #
 ###################################
+#
+# Important implementation notes:
+# Previously, a subplot consisted of several series of bars, each with a color and/or hatch.
+# These could be interleaved or stacked.
+# Now, a group takes on the role of a subplot, and takes one section of the x-axis.
+# To simplify things, we do not allow a numerical x-axis for groups. That is, the integer mapping
+# of an xlabel is used to locate the xlabel on the x-axis.
+# Groups are offset by plotVars['GroupSeparation']. Thus, xticks for a group of series are integer
+# increments starting from the current plotVars['GroupOffset'] (see how this is calculated).
+# The unique series index maintained at subplot granularity is still used to determine color and/or hatch.
+# It is probably preferable to maintain this at the top level of the Init functions, since we want all
+# corresponding series to have the same color/hatch/marker etc. We'll see.
+#
+# This sort of implementation benefits from a lot of code re-use. For example, setting the legend title
+# to the "Series" label in PlotFnsSeries.BeforeSubplot() still works here.
+###################################
 
 def GroupBeforeSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -114,10 +135,29 @@ def GroupBeforeSubplot(plotVars):
 
   Series.BeforeSubplot(plotVars)
   plotVars['GroupCount'] = 0
-  plotVars['TotalPointsCount'] = 0
+  plotVars['TotalPointsCount'] = 0 #used in plotVars['GroupOffset']
 
-  if 'GroupSepartion' not in plotVars:
+  #Aggregates the xticks and xticklabels across all groups in the subplot
+  plotVars['AggregateXTicks'] = []
+  plotVars['AggregateXTickLabels'] = []
+
+  if 'GroupSeparation' not in plotVars:
     plotVars['GroupSeparation'] = 1 #set a default
+
+def GroupCleanUpXTicks(plotVars):
+    ax = plotVars['Axes']
+    ax.minorticks_off()
+    ax.set_xticks(plotVars['AggregateXTicks'])
+    ax.set_xticklabels(plotVars['AggregateXTickLabels'])
+    ax.tick_params(bottom=True)
+
+def GroupAfterSubplot(plotVars):
+  if plotVars['TraceFunctionCalls']:
+    print '-Subplot (Group)'
+
+  GroupCleanUpXTicks(plotVars)
+
+  Common.AfterSubplot(plotVars)
 
 def BeforeGroup(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -134,6 +174,7 @@ def BeforeGroup(plotVars):
   plotVars['GroupUniqueXVals'] = set()
   plotVars['GroupCount'] += 1
 
+#perform once per group
 def GroupNumerizeXVals(plotVars):
   xtoint = {}
   inttox = [] #group-specific inttox mapping
@@ -141,18 +182,29 @@ def GroupNumerizeXVals(plotVars):
   for xlabel in plotVars['InttoX']:
     #GroupUniqueXVals may not contain some xlabels from other groups
     if xlabel in plotVars['GroupUniqueXVals']:
-      xtoint[xlabel] = len(inttox)
+      xtoint[xlabel] = len(inttox)+plotVars['GroupOffset']
       inttox.append(xlabel)
+ 
+  #These two lines ensure that xtick labels end up where they should be.
+  #The rule for this implementation is that xticks are on integer increments starting from each group offset.
+  #Notice that other functions are subsequently called to adjust x positions.
+  #Eg. AdjustX and InterleaveBarsAndAdjustX... These end up doing the right thing, but users should be(a)ware.
+  plotVars['AggregateXTicks'].extend(np.arange(len(inttox))+plotVars['GroupOffset'])
+  plotVars['AggregateXTickLabels'].extend(inttox)
 
   #taken from Series.numerizeXVals()
   for si in plotVars['SeriesInfo']:
     si['xlabels'] = list(si['x'])
     xlabels = si['xlabels']
-    x = map(lambda val: xtoint[val]+plotVars['GroupOffset'], xlabels) #replaces each xval by its int-value
+    x = map(lambda val: xtoint[val], xlabels) #replaces each xval by its int-value
     y = si['y']
     zipped = zip(x,y,xlabels)
     zipped.sort() #sorts by x int-values
     si['x'],si['y'],si['xlabels'] = zip(*zipped) #splits the zipped stuff back out
+
+def GroupPlotAllSeries(plotVars):
+  for si in plotVars['SeriesInfo']:
+    si['fn']( si['x'],si['y'],**si['kwargs'] )
 
 def AfterGroup(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -172,7 +224,7 @@ def InterleavedAfterGroup(plotVars):
 
   AfterGroup(plotVars)
   InterleaveBarsAndAdjustX(plotVars)
-  Series.plotAllSeries(plotVars)
+  GroupPlotAllSeries(plotVars)
 
 def StackedAfterGroup(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -181,7 +233,7 @@ def StackedAfterGroup(plotVars):
   AfterGroup(plotVars)
   StackBars(plotVars)
   AdjustX(plotVars)
-  Series.plotAllSeries(plotVars)
+  GroupPlotAllSeries(plotVars)
 
 def Stacked100PctAfterGroup(plotVars):
   Series.AfterSubplotAdd100Pct(plotVars)
@@ -215,7 +267,7 @@ Common.defaultFns['BarInterleaved']['Subplot'] = (Series.BeforeSubplot, Interlea
 #Grouped Stacked Bar chart
 Common.defaultFns['GroupedBarStacked'] = {
     'Figure'  : (Common.BeforeFigure, Common.AfterFigure,),
-    'Subplot' : (GroupBeforeSubplot, Common.AfterSubplot,),
+    'Subplot' : (GroupBeforeSubplot, GroupAfterSubplot,),
     'Group'   : (BeforeGroup, StackedAfterGroup,),
     'Series'  : (BeforeSeries, Series.AfterSeries,),
     'Point'   : (Series.Point,),
