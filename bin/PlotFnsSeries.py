@@ -32,7 +32,7 @@ def BeforeSubplot(plotVars):
   plotVars['SeriesColors'] = ['k', 'r', 'b']
   plotVars['SeriesStyles'] = ['-', '--', '-.', ":"]
   plotVars['SeriesMarkers'] = ['o','^','s','*','D']
-  plotVars['SeriesTextures'] = [' ', '/', '\\', '//', '\\\\', 'x']
+  plotVars['SeriesHatches'] = [' ', '/', '\\', '//', '\\\\', 'x']
   plotVars['SeriestoInt'] = {}
 
   if "Series" in plotVars['Labels']:
@@ -101,12 +101,12 @@ def BeforeSeries(plotVars):
   seriesColors   = plotVars['SeriesColors']
   seriesStyles   = plotVars['SeriesStyles']
   seriesMarkers  = plotVars['SeriesMarkers']
-  seriesTextures = plotVars['SeriesTextures']
+  seriesHatches  = plotVars['SeriesHatches']
 
   plotVars['SeriesStyle'] = seriesStyles[plotVars['SeriesIntValue'] % len(seriesStyles)]
   plotVars['SeriesColor'] = seriesColors[plotVars['SeriesIntValue'] % len(seriesColors)]
   plotVars['SeriesMarker'] = seriesMarkers[plotVars['SeriesIntValue'] % len(seriesMarkers)]
-  plotVars['SeriesTexture'] = seriesTextures[plotVars['SeriesIntValue'] % len(seriesTextures)]
+  plotVars['SeriesHatch'] = seriesHatches[plotVars['SeriesIntValue'] % len(seriesHatches)]
 
   # initialize x-y arrays for the series
   plotVars['XVals'] = []

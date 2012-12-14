@@ -143,13 +143,19 @@ def GroupCleanUpXTicks(plotVars):
     ax.minorticks_off()
     ax.set_xticks(plotVars['AggregateXTicks'])
     ax.set_xticklabels(plotVars['AggregateXTickLabels'])
-    ax.tick_params(bottom=True)
+    ax.tick_params(bottom='off')
+
+def GroupSetXLim(plotVars):
+  left = -.5 * plotVars['GroupSeparation']
+  right = (plotVars['GroupCount']-.5) * plotVars['GroupSeparation'] + plotVars['TotalPointsCount']
+  plotVars['Axes'].set_xlim(left,right)
 
 def GroupAfterSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '-Subplot (Group)'
 
   GroupCleanUpXTicks(plotVars)
+  GroupSetXLim(plotVars)
 
   Common.AfterSubplot(plotVars)
 
