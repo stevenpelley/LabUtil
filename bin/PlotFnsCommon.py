@@ -125,3 +125,19 @@ def AfterSubplot(plotVars):
   if 'YLabel' in plotVars:
     plotVars['Axes'].set_ylabel(plotVars['YLabel'])
   # TODO: enforce axes limits or leave to overriding
+
+# return the string label for the layer
+# each plotVars['Labels'] may be a string or function
+def makeLayerLabel(plotVars, layer):
+  if layer in plotVars['Labels']:
+    entry = plotVars['Labels'][layer]
+    import types
+    assert isinstance(entry, str) or isinstance(entry, types.FunctionType), "Layer label inputs must be string or function"
+    if isinstance(entry, str):
+      return entry.format(plotVars['ColumnToValue'])
+    elif isinstance(entry, types.FunctionType):
+      ret = entry(plotVars['ColumnToValue'])
+      assert isinstance(ret, str), "return of layer label function must be str"
+      return ret
+  else:
+    return str(plotVars['LayerValues'][layer])

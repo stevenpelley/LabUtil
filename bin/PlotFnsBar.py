@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import numpy as np
+import matplotlib
 
 import PlotFnsCommon as Common
 import PlotFnsSeries as Series
@@ -123,9 +124,12 @@ def GroupBeforeSubplot(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '+Subplot (Group)'
 
+  # do not allow XLabel because we will have group labels!
+  if 'Labels' in plotVars and 'XAxis' in plotVars['Labels']: del plotVars['Labels']['XAxis']
+
   Series.BeforeSubplot(plotVars)
   plotVars['GroupCount'] = 0
-  plotVars['TotalPointsCount'] = 0 #used in plotVars['GroupOffset']
+  plotVars['TotalPointsCount'] = 0 #used in plotVars['GroupOffset'] -- number of bars observed
 
   #Aggregates the xticks and xticklabels across all groups in the subplot
   plotVars['AggregateXTicks'] = []
@@ -196,6 +200,11 @@ def GroupPlotAllSeries(plotVars):
   for si in plotVars['SeriesInfo']:
     si['fn']( si['x'],si['y'],**si['kwargs'] )
 
+def PlotGroupLabel(plotVars, text, XOffset, y):
+  ax = plotVars['Axes']
+  trans = matplotlib.transforms.blended_transform_factory(ax.transData, ax.transAxes)
+  plotVars['ExtraArtists'].append(ax.text(XOffset, y, text, va="top", ha="center", transform=trans))
+
 def AfterGroup(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '-Group'
@@ -205,6 +214,10 @@ def AfterGroup(plotVars):
     plotVars['GroupUniqueXVals'].update(si['x'])
 
   GroupNumerizeXVals(plotVars)
+
+  # plot the group label
+  groupLoc = plotVars['GroupOffset'] + ( (len(plotVars['GroupUniqueXVals'])-1.0) / 2.0)
+  PlotGroupLabel(plotVars, Common.makeLayerLabel(plotVars, 'Group'), groupLoc, -.08)
 
   plotVars['TotalPointsCount'] += len(plotVars['GroupUniqueXVals'])
 
