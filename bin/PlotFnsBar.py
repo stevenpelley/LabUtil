@@ -24,6 +24,8 @@ def BeforeSeries(plotVars):
     'color'     : plotVars['SeriesColor'],
     'bottom'    : 0,
     'width'     : plotVars.get('BarWidth', 0.8),
+    'align'     : 'center',
+    'linewidth' : 0.5,
   }
 
 ###################################
@@ -32,7 +34,6 @@ def BeforeSeries(plotVars):
 # ie. At the end of a subplot, or at the end of a group
 #
 ###################################
-
 
 def StackBars(plotVars):
   #determine new bottoms
@@ -55,23 +56,13 @@ def InterleaveBars(plotVars):
     for i,si in enumerate(plotVars['SeriesInfo']):
       si['x'] = np.array(si['x']) + i*increment
 
-def InterleaveBarsAndAdjustX(plotVars):
+def InterleaveBarsCentered(plotVars):
   numSeries = len(plotVars['SeriesInfo'])
   if numSeries > 1:
     increment = plotVars['BarInterleaveOffset']
     offset = -increment*(numSeries-1)/2.0
     for i,si in enumerate(plotVars['SeriesInfo']):
-      si['x'] = np.array(si['x']) + i*increment + offset - si['kwargs']['width']/2.0
-
-#Adjusts xvals half of width to the left,
-#so that center of bar corresponds to the original xval
-def AdjustX(plotVars):
-  for i,si in enumerate(plotVars['SeriesInfo']):
-    si['x'] = np.array(si['x']) - si['kwargs']['width']/2.0
-
-def OffsetX(plotVars,offset):
-  for i,si in enumerate(plotVars['SeriesInfo']):
-    si['x'] = np.array(si['x']) + offset
+      si['x'] = np.array(si['x']) + i*increment + offset
 
 ###################################
 #
@@ -85,7 +76,7 @@ def InterleavedAfterSubplot(plotVars):
     print '-Subplot (BarInterleaved)'
 
   Series.numerizeXVals(plotVars)
-  InterleaveBarsAndAdjustX(plotVars)
+  InterleaveBarsCentered(plotVars)
   Series.plotAllSeries(plotVars)
   Common.AfterSubplot(plotVars)
 
@@ -95,7 +86,6 @@ def StackedAfterSubplot(plotVars):
 
   StackBars(plotVars)
   Series.numerizeXVals(plotVars)
-  AdjustX(plotVars)
   Series.plotAllSeries(plotVars)
   Common.AfterSubplot(plotVars)
 
@@ -188,7 +178,7 @@ def GroupNumerizeXVals(plotVars):
   #These two lines ensure that xtick labels end up where they should be.
   #The rule for this implementation is that xticks are on integer increments starting from each group offset.
   #Notice that other functions are subsequently called to adjust x positions.
-  #Eg. AdjustX and InterleaveBarsAndAdjustX... These end up doing the right thing, but users should be(a)ware.
+  #Eg. InterleaveBarsCentered... These end up doing the right thing, but users should be(a)ware.
   plotVars['AggregateXTicks'].extend(np.arange(len(inttox))+plotVars['GroupOffset'])
   plotVars['AggregateXTickLabels'].extend(inttox)
 
@@ -223,7 +213,7 @@ def InterleavedAfterGroup(plotVars):
     print '-Group (BarInterleaved)'
 
   AfterGroup(plotVars)
-  InterleaveBarsAndAdjustX(plotVars)
+  InterleaveBarsCentered(plotVars)
   GroupPlotAllSeries(plotVars)
 
 def StackedAfterGroup(plotVars):
@@ -232,7 +222,6 @@ def StackedAfterGroup(plotVars):
 
   AfterGroup(plotVars)
   StackBars(plotVars)
-  AdjustX(plotVars)
   GroupPlotAllSeries(plotVars)
 
 def Stacked100PctAfterGroup(plotVars):
