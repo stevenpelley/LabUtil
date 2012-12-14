@@ -11,7 +11,8 @@
 # x goes from 0 to 5 by 1
 import random
 
-alphabet = 'abcdefghijklmnopqrstuvwxyz'
+import string
+alphabet = string.lowercase
 
 columns = ("Offset", "Exponent", "Slope", "XValue", "YValue",)
 rows = []
@@ -82,5 +83,6 @@ plotVars['GroupSeparation'] = 1 #try setting this to -2.5, for example
 plotVars['XLabelOnLast'] = True
 
 plotVars['TraceFunctionCalls'] = True
+plotVars['LegendLocation'] = 'upper left'
 
 Plot.plot(plotVars)

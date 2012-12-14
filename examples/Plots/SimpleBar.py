@@ -72,11 +72,14 @@ plotVars['Labels']= {
 }
 
 plotVars['OutputDir'] = 'SimpleBar'
-plotVars['DefaultFns'] = 'BarStacked'
-plotVars['BarInterleaveOffset'] = 0.3
-plotVars['BarWidth'] = 0.3
+#plotVars['DefaultFns'] = 'BarStacked'
+plotVars['DefaultFns'] = 'BarInterleaved'
+plotVars['BarInterleaveOffset'] = 0.333
+plotVars['BarWidth'] = 0.333
 plotVars['XLabelOnLast'] = True
 
 plotVars['TraceFunctionCalls'] = True
+
+plotVars['LegendLocation'] = 'upper left'
 
 Plot.plot(plotVars)
