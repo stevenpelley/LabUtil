@@ -89,8 +89,19 @@ def BeforeSubplot(plotVars):
   ax.spines['top'].set_color('none')
   ax.spines['right'].set_color('none')
 
-  if 'LegendLocation' not in plotVars:
-    plotVars['LegendLocation'] = None
+  # Set up plotVars['LegendKWargs'], a dict
+  # The intention is that the user can override the defaults below
+  # What the user does not override is still copied into the final dict
+  defaultLegendKWArgs = {
+      'loc'     : None,
+      'frameon' : False,
+  }
+
+  if 'LegendKWArgs' not in plotVars:
+    plotVars['LegendKWArgs'] = dict(defaultLegendKWArgs)
+  else: #User has specified some legend kwargs
+    for k,v in defaultLegendKWArgs.iteritems():
+      plotVars['LegendKWArgs'].setdefault(k,v) #does not override the value if the user has already set it
 
   # create titles for subplot, xaxis, yaxis, and legend
   if 'Subplot' in plotVars['Labels']:
@@ -116,10 +127,7 @@ def AfterSubplot(plotVars):
   if 'SubplotTitle' in plotVars:
     plotVars['Axes'].set_title(plotVars['SubplotTitle'])
   if 'LegendTitle' in plotVars:
-    lg = plotVars['Axes'].legend(title=plotVars['LegendTitle'], loc=plotVars['LegendLocation'])
-    if lg: 
-      lg.draw_frame(False)
-    plotVars['Legend'] = lg
+    plotVars['Legend'] = plotVars['Axes'].legend(title=plotVars['LegendTitle'], **plotVars['LegendKWArgs'])
   if 'XLabel' in plotVars:
     plotVars['Axes'].set_xlabel(plotVars['XLabel'])
   if 'YLabel' in plotVars:
