@@ -79,6 +79,7 @@ def InterleavedAfterSubplot(plotVars):
   Series.numerizeXVals(plotVars)
   InterleaveBarsCentered(plotVars)
   Series.plotAllSeries(plotVars)
+  Series.cleanUpXTicks(plotVars)
   Common.AfterSubplot(plotVars)
 
 def StackedAfterSubplot(plotVars):
@@ -88,6 +89,7 @@ def StackedAfterSubplot(plotVars):
   StackBars(plotVars)
   Series.numerizeXVals(plotVars)
   Series.plotAllSeries(plotVars)
+  Series.cleanUpXTicks(plotVars)
   Common.AfterSubplot(plotVars)
 
 def Stacked100PctBeforeSubplot(plotVars):
