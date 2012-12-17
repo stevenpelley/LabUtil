@@ -79,11 +79,14 @@ plotVars['Labels']= {
 plotVars['OutputDir'] = 'GroupedBar'
 plotVars['DefaultFns'] = 'GroupedBarStacked'
 plotVars['BarInterleaveOffset'] = 0.3
-plotVars['BarWidth'] = 0.3
+plotVars['UserBarKWArgs'] = {
+  'width' : 0.3,
+}
 plotVars['GroupSeparation'] = 1 #try setting this to -2.5, for example
 plotVars['XLabelOnLast'] = True
 
 plotVars['TraceFunctionCalls'] = True
-plotVars['LegendLocation'] = 'upper left'
-
+plotVars['UserLegendKWArgs'] = {
+  'loc' : 'upper left',
+}
 Plot.plot(plotVars)

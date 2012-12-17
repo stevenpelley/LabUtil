@@ -90,18 +90,12 @@ def BeforeSubplot(plotVars):
   ax.spines['right'].set_color('none')
 
   # Set up plotVars['LegendKWargs'], a dict
-  # The intention is that the user can override the defaults below
-  # What the user does not override is still copied into the final dict
-  defaultLegendKWArgs = {
+  plotVars['LegendKWArgs'] = {
       'loc'     : None,
       'frameon' : False,
   }
-
-  if 'LegendKWArgs' not in plotVars:
-    plotVars['LegendKWArgs'] = dict(defaultLegendKWArgs)
-  else: #User has specified some legend kwargs
-    for k,v in defaultLegendKWArgs.iteritems():
-      plotVars['LegendKWArgs'].setdefault(k,v) #does not override the value if the user has already set it
+  if 'UserLegendKWArgs' in plotVars:
+    plotVars['LegendKWArgs'].update(plotVars['UserLegendKWArgs'])
 
   # create titles for subplot, xaxis, yaxis, and legend
   if 'Subplot' in plotVars['Labels']:

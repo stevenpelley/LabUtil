@@ -23,12 +23,17 @@ def BeforeSeries(plotVars):
   Series.BeforeSeries(plotVars)
 
   plotVars['PlotFunction'] = plotVars['Axes'].plot
-  plotVars['PlotFunctionKWArgs'] = {
+
+  plotVars['LineKWArgs'] = {
     'label'     : plotVars['SeriesLabel'],
     'linestyle' : plotVars['SeriesStyle'],
     'color'     : plotVars['SeriesColor'],
     'marker'    : plotVars['SeriesMarker'],
   }
+  if 'UserLineKWArgs' in plotVars:
+    plotVars['LineKWArgs'].update(plotVars['UserLineKWArgs'])
+
+  plotVars['PlotFunctionKWArgs'] = dict(plotVars['LineKWArgs'])
 
 ###################################
 #

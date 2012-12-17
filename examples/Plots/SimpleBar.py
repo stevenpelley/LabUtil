@@ -75,11 +75,15 @@ plotVars['OutputDir'] = 'SimpleBar'
 #plotVars['DefaultFns'] = 'BarStacked'
 plotVars['DefaultFns'] = 'BarInterleaved'
 plotVars['BarInterleaveOffset'] = 0.333
-plotVars['BarWidth'] = 0.333
+plotVars['UserBarKWArgs'] = {
+  'width' : 0.333
+}
 plotVars['XLabelOnLast'] = True
 
 plotVars['TraceFunctionCalls'] = True
 
-plotVars['LegendLocation'] = 'upper left'
+plotVars['UserLegendKWArgs'] = {
+  'loc' : 'upper left'
+}
 
 Plot.plot(plotVars)

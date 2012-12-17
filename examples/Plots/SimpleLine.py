@@ -71,8 +71,16 @@ plotVars['Labels']= {
 
 plotVars['OutputDir'] = 'SimpleLine'
 plotVars['DefaultFns'] = 'Line'
+plotVars['UserLineKWArgs'] = {
+  'marker' : None,
+  'linestyle' : '-',
+}
 plotVars['XLabelOnLast'] = True
 
 plotVars['TraceFunctionCalls'] = True
+
+plotVars['UserLegendKWArgs'] = {
+  'loc' : 'upper left',
+}
 
 Plot.plot(plotVars)

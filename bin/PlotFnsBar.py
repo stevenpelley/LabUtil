@@ -18,16 +18,21 @@ def BeforeSeries(plotVars):
 
   Series.BeforeSeries(plotVars)
 
-  #These are used in PlotFnsSeries.AfterSeries()
+  #PlotFunction and PlotFunctionKWArgs are used in PlotFnsSeries.AfterSeries()
   plotVars['PlotFunction'] = plotVars['Axes'].bar
-  plotVars['PlotFunctionKWArgs'] = {
-    'label'     : plotVars['SeriesLabel'],
-    'color'     : plotVars['SeriesColor'],
+
+  plotVars['BarKWArgs'] = {
     'bottom'    : 0,
-    'width'     : plotVars.get('BarWidth', 0.8),
     'align'     : 'center',
     'linewidth' : 0.5,
+    'width'     : 0.8,
+    'label'     : plotVars['SeriesLabel'],
+    'color'     : plotVars['SeriesColor'],
   }
+  if 'UserBarKWArgs' in plotVars:
+    plotVars['BarKWArgs'].update(plotVars['UserBarKWArgs'])
+
+  plotVars['PlotFunctionKWArgs'] = dict(plotVars['BarKWArgs'])
 
 ###################################
 #
