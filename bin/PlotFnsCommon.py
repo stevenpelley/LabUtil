@@ -126,6 +126,11 @@ def AfterSubplot(plotVars):
     plotVars['Axes'].set_xlabel(plotVars['XLabel'])
   if 'YLabel' in plotVars:
     plotVars['Axes'].set_ylabel(plotVars['YLabel'])
+  #TODO: Find a good place to apply all xtick kwargs
+  #Currently, only 'rotation' is supported
+  if 'rotation' in plotVars['UserXTickLabelsKWArgs']:
+    for label in plotVars['Axes'].get_xticklabels():
+      label.set_rotation(plotVars['UserXTickLabelsKWArgs']['rotation'])
   # TODO: enforce axes limits or leave to overriding
 
 # return the string label for the layer
