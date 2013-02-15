@@ -250,6 +250,10 @@ def StackedAfterGroup(plotVars):
   StackBars(plotVars)
   GroupPlotAllSeries(plotVars)
 
+def Stacked100PctBeforeGroup(plotVars):
+  BeforeGroup(plotVars)
+  Series.BeforeSubplotAdd100Pct(plotVars)
+
 def Stacked100PctAfterGroup(plotVars):
   Series.AfterSubplotAdd100Pct(plotVars)
   StackedAfterGroup(plotVars)
@@ -292,7 +296,7 @@ Common.defaultFns['GroupedBarStacked'] = {
 
 #Grouped 100% Stacked Bar chart
 Common.defaultFns['GroupedBarStacked100Pct'] = dict(Common.defaultFns['GroupedBarStacked'])
-Common.defaultFns['GroupedBarStacked100Pct']['Group'] = (Stacked100PctBeforeSubplot, Stacked100PctAfterGroup,)
+Common.defaultFns['GroupedBarStacked100Pct']['Group'] = (Stacked100PctBeforeGroup, Stacked100PctAfterGroup,)
 Common.defaultFns['GroupedBarStacked100Pct']['Point'] = (Series.Point100Pct,)
 
 #Grouped Interleaved Bar chart
