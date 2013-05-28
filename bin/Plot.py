@@ -162,6 +162,9 @@ def getLayersToUpdate(plotVars, row):
   listOfChangedLayers = []
   lastChanged = False
   for layer in plotVars['Layers']:
+    if len(listOfChangedLayers) != 0:
+        listOfChangedLayers.append(layer)
+        continue
     layerEmpty = len(newVals[layer]) == 0
     if (oldVals[layer] != newVals[layer] or (layerEmpty and lastChanged)) and layer != plotVars['Layers'][-1]:
       listOfChangedLayers.append(layer)
