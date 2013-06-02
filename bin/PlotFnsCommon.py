@@ -122,7 +122,6 @@ def AfterSubplot(plotVars):
     plotVars['Axes'].set_title(plotVars['SubplotTitle'])
   if 'LegendTitle' in plotVars:
     plotVars['Legend'] = plotVars['Axes'].legend(title=plotVars['LegendTitle'], **plotVars['LegendKWArgs'])
-    plotVars['ExtraArtists'].append(plotVars['Legend'])
   if 'XLabel' in plotVars:
     plotVars['Axes'].set_xlabel(plotVars['XLabel'])
   if 'YLabel' in plotVars:
