@@ -136,7 +136,7 @@ def makeLayerLabel(plotVars, layer):
     import types
     assert isinstance(entry, str) or isinstance(entry, types.FunctionType), "Layer label inputs must be string or function"
     if isinstance(entry, str):
-      return entry.format(**plotVars['ColumnToValue'])
+      return entry.format(plotVars['ColumnToValue'])
     elif isinstance(entry, types.FunctionType):
       ret = entry(plotVars['ColumnToValue'])
       assert isinstance(ret, str), "return of layer label function must be str"
