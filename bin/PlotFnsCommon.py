@@ -97,6 +97,10 @@ def BeforeSubplot(plotVars):
   if 'UserLegendKWArgs' in plotVars:
     plotVars['LegendKWArgs'].update(plotVars['UserLegendKWArgs'])
 
+  plotVars['XTickLabelsKWArgs'] = {}
+  if 'UserXTickLabelsKWArgs' in plotVars:
+    plotVars['XTickLabelsKWArgs'].update(plotVars['UserXTickLabelsKWArgs'])
+
   # create titles for subplot, xaxis, yaxis, and legend
   if 'Subplot' in plotVars['Labels']:
     plotVars['SubplotTitle'] = plotVars['Labels']['Subplot'] % plotVars['ColumnToValue']
@@ -127,6 +131,12 @@ def AfterSubplot(plotVars):
   if 'YLabel' in plotVars:
     plotVars['Axes'].set_ylabel(plotVars['YLabel'])
   # TODO: enforce axes limits or leave to overriding
+
+
+  if 'rotation' in plotVars['XTickLabelsKWArgs']:
+    for label in plotVars['Axes'].get_xticklabels():
+      label.set_rotation(plotVars['XTickLabelsKWArgs']['rotation'])
+  # TODO: support all kwargs for xtick_labels, not just rotation
 
 # return the string label for the layer
 # each plotVars['Labels'] may be a string or function
