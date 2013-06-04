@@ -28,6 +28,7 @@ def BeforeSeries(plotVars):
     'width'     : 0.8,
     'label'     : plotVars['SeriesLabel'],
     'color'     : plotVars['SeriesColor'],
+    'hatch'     : plotVars['SeriesHatch'],
   }
   if 'UserBarKWArgs' in plotVars:
     plotVars['BarKWArgs'].update(plotVars['UserBarKWArgs'])
