@@ -131,7 +131,14 @@ def AfterSubplot(plotVars):
   if 'SubplotTitle' in plotVars:
     plotVars['Axes'].set_title(plotVars['SubplotTitle'])
   if 'LegendTitle' in plotVars:
-    plotVars['Legend'] = plotVars['Axes'].legend(title=plotVars['LegendTitle'], **plotVars['LegendKWArgs'])
+    handles, labels = plotVars['Axes'].get_legend_handles_labels()
+    if 'LegendReverse' in plotVars and plotVars['LegendReverse'] == True:
+      handles = reversed(handles)
+      labels = reversed(labels)
+    plotVars['Legend'] = plotVars['Axes'].legend(handles,labels, title=plotVars['LegendTitle'], **plotVars['LegendKWArgs'])
+    plotVars['ExtraArtists'].append(plotVars['Legend'])
+    plotVars['ExtraArtists'].extend(plotVars['Legend'].get_children())
+
   if 'XLabel' in plotVars:
     plotVars['Axes'].set_xlabel(plotVars['XLabel'])
   if 'YLabel' in plotVars:
