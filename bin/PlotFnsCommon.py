@@ -114,8 +114,14 @@ def BeforeSubplot(plotVars):
     plotVars['YLabel'] = plotVars['Labels']['YAxis'] % plotVars['ColumnToValue']
 
   # start collecting limits on axes
-  plotVars['XAxisLimits'] = [None, None]
-  plotVars['YAxisLimits'] = [None, None]
+  plotVars['XAxisLimits'] = (None, None)
+  plotVars['YAxisLimits'] = (None, None)
+
+  if 'UserYAxisLimits' in plotVars:
+    plotVars['YAxisLimits'] = plotVars['UserYAxisLimits']
+  if 'UserXAxisLimits' in plotVars:
+    plotVars['XAxisLimits'] = plotVars['UserXAxisLimits']
+    
 
 
 def AfterSubplot(plotVars):
@@ -130,8 +136,10 @@ def AfterSubplot(plotVars):
     plotVars['Axes'].set_xlabel(plotVars['XLabel'])
   if 'YLabel' in plotVars:
     plotVars['Axes'].set_ylabel(plotVars['YLabel'])
-  # TODO: enforce axes limits or leave to overriding
 
+  # enforce axes limits or leave to overriding
+  plotVars['Axes'].set_ylim(plotVars['YAxisLimits'])
+  plotVars['Axes'].set_xlim(plotVars['XAxisLimits'])
 
   if 'rotation' in plotVars['XTickLabelsKWArgs']:
     for label in plotVars['Axes'].get_xticklabels():
