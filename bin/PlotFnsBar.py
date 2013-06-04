@@ -209,10 +209,6 @@ def GroupNumerizeXVals(plotVars):
     zipped.sort() #sorts by x int-values
     si['x'],si['y'],si['xlabels'] = zip(*zipped) #splits the zipped stuff back out
 
-def GroupPlotAllSeries(plotVars):
-  for si in plotVars['SeriesInfo']:
-    si['fn']( si['x'],si['y'],**si['kwargs'] )
-
 def PlotGroupLabel(plotVars, text, XOffset, y):
   ax = plotVars['Axes']
   trans = matplotlib.transforms.blended_transform_factory(ax.transData, ax.transAxes)
@@ -240,7 +236,7 @@ def InterleavedAfterGroup(plotVars):
 
   AfterGroup(plotVars)
   InterleaveBarsCentered(plotVars)
-  GroupPlotAllSeries(plotVars)
+  Series.plotAllSeries(plotVars)
 
 def StackedAfterGroup(plotVars):
   if plotVars['TraceFunctionCalls']:
@@ -248,7 +244,7 @@ def StackedAfterGroup(plotVars):
 
   AfterGroup(plotVars)
   StackBars(plotVars)
-  GroupPlotAllSeries(plotVars)
+  Series.plotAllSeries(plotVars)
 
 def Stacked100PctBeforeGroup(plotVars):
   BeforeGroup(plotVars)
