@@ -121,7 +121,10 @@ def BeforeSubplot(plotVars):
     plotVars['YAxisLimits'] = plotVars['UserYAxisLimits']
   if 'UserXAxisLimits' in plotVars:
     plotVars['XAxisLimits'] = plotVars['UserXAxisLimits']
-    
+
+  # remove old extra legend handles
+  if 'LegendExtraSeries' in plotVars:
+    del plotVars['LegendExtraSeries']
 
 
 def AfterSubplot(plotVars):
@@ -132,6 +135,9 @@ def AfterSubplot(plotVars):
     plotVars['Axes'].set_title(plotVars['SubplotTitle'])
   if 'LegendTitle' in plotVars:
     handles, labels = plotVars['Axes'].get_legend_handles_labels()
+    if 'LegendExtraSeries' in plotVars:
+      handles.extend(plotVars['LegendExtraSeries']['handles'])
+      labels.extend(plotVars['LegendExtraSeries']['labels'])
     if 'LegendReverse' in plotVars and plotVars['LegendReverse'] == True:
       handles = reversed(handles)
       labels = reversed(labels)
