@@ -81,7 +81,10 @@ def StackLineAfterSubplot(plotVars):
     legendExtra['labels'].append(si['label'])
   poly_collection = fn(xs, ys, **stack_kwargs)
   for i,p in enumerate(poly_collection):
-    dummy = matplotlib.patches.Rectangle((0,0),1,1, fc=plotVars['SeriesColors'][i])
+    # TODO: be able to turn off hatches
+    # currently would need to set SeriesHatches to ['None'] or similar
+    p.set_hatch(plotVars['SeriesHatches'][i])
+    dummy = matplotlib.patches.Rectangle((0,0),1,1, fc=plotVars['SeriesColors'][i], hatch=plotVars['SeriesHatches'][i])
     legendExtra['handles'].append(dummy)
   plotVars['LegendExtraSeries'] = legendExtra
 
