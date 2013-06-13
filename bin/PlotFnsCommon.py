@@ -48,6 +48,9 @@ def BeforeFigure(plotVars):
   plotVars['Axes'] = None
   plotVars['SubplotCount'] = 0
 
+  if "FigureSize" in plotVars:
+    plotVars['Figure'].set_size_inches(plotVars['FigureSize'])
+
 def AfterFigure(plotVars):
   if plotVars['TraceFunctionCalls']:
     print '-figure'
