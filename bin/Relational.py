@@ -35,39 +35,40 @@ class Relation:
     
   # helper
   # return a tuple of the given fields
+  @staticmethod
   def projectRow(cols, row, projectFields):
     assert isinstance(projectFields, tuple), "Projection Fields must be a tuple"
     newRow = []
-    for field in projectFields:
-      assert f in cols, "Projection Field {!r} not in cols {!r}".format(f, cols)
-      newRow.append(row[cols.index(f)])
+    for col in projectFields:
+      assert col in cols, "Projection Field {!r} not in cols {!r}".format(f, cols)
+      newRow.append(row[cols.index(col)])
     return tuple(newRow)
 
   # projection on relation
   # A projection collects the specified columns of each tuple in the relation
   # include only those fields listed in projectFields
-  def project(self, projectFields):
+  def project(self, projectCols):
     newRows = []
     for row in self.rows:
-      newRows.append(projectRow(self.cols, row, projectFields)
-    self.cols = projectFields
+      newRows.append(Relation.projectRow(self.cols, row, projectCols))
+    self.cols = projectCols
     self.rows = newRows
 
   # perform a selection (essentially a filter)
   # A selection collects all columns of specified rows
-  # selectFn takes in (row, tuple of vals) returns True to keep row, False to pass
+  # selectFn takes in (tuple of vals) returns True to keep row, False to pass
   # selectFnColInputs determines which column values are the inputs to selectFn
   def select(self, selectFn, selectFnColInputs):
-    innerSelectFn = lambda row: selectFn(row, projectRow(self.cols, row, selectFnColInputs))
+    innerSelectFn = lambda row: selectFn(Relation.projectRow(self.cols, row, selectFnColInputs))
     self.rows = filter(innerSelectFn, self.rows)
 
   # generate new column for each tuple
-  # generateFn takes in (row, tuple of vals) returns new column value
+  # generateFn takes in tuple of vals, returns new column value
   # generateFnColInputs determines which column values are inputs to generateFn
   # modifies the relation!
   def generateCol(self, colName, generateFn, generateFnColInputs):
     def innerGenerateMap(row):
-      newVal = generateFn(row, projectRow(self.cols, row, generateFnColInputs))
+      newVal = generateFn(Relation.projectRow(self.cols, row, generateFnColInputs))
       return row + (newVal,)
     self.rows = map(innerGenerateMap, self.rows)
     self.cols = self.cols + (colName,)
@@ -158,7 +159,7 @@ class Relation:
     for key in [projectRow(otherRelation.cols, r, keyCols) for r in otherRelation.rows]:
       otherKeySet.add(key)
     symDiff = myKeySet ^ otherKeySet
-    if 'assert' in kwargs and kwargs['assert']:
+    if 'doAssert' in kwargs and kwargs['doAssert']:
       assert len(symDiff) == 0, "keys mismatched\nIn left but not right:\n{!r}\nIn right but not left:\n{!r}".format(myKeySet-otherKeySet, otherKeySet-myKeySet)
     return len(symDiff) == 0
 
@@ -169,23 +170,23 @@ class Relation:
     newRows = []
     for row in self.rows:
       newRow = list(row)
-      for (val, colName) in zip(row, self.cols):
+      for i, (val, colName) in enumerate(zip(row, self.cols)):
         if colName in castDict:
           try:
-            newVal = castDict[colName](val)
+            val = castDict[colName](val)
           except:
-            print "error casting field: {!r}, value: {!r}, type: {!r}" % (field, val, type(val))
-          newRow[i]
+            print "error casting column: {!r}, value: {!r}, type: {!r}".format(colName, val, type(val))
+          newRow[i] = val
       newRows.append(tuple(newRow))
     self.rows = newRows
 
   # filterDict is dict of {column name -> bool function (true to keep)}
-  def filter(self. filterDict
+  def filter(self, filterDict):
     newRows = []
     for row in self.rows:
       keep = True
       for (val, colName) in zip(row, self.cols):
-        if colName in castDict:
+        if colName in filterDict:
           try:
             keep = filterDict[colName](val)
           except:
@@ -193,9 +194,36 @@ class Relation:
 
         if not keep:
           break # next row
-      newRows.append(tuple(newRow))
+      if keep:
+        newRows.append(row)
     self.rows = newRows
 
+  # calculate the mins of all rows
+  def mins(self):
+    import operator
+    outputMins = [0] * len(self.cols)
+    for i in range(len(self.cols)):
+      l = map(operator.itemgetter(i), self.rows)
+      outputMins[i] = min(l)
+    return tuple(outputMins)
+
+  def __str__(self):
+    return self.toStr(5)
+
+  def toStr(self, rowCount=-1):
+    # convert so that we can properly add newlines
+    rowCount = len(self.rows) if rowCount == -1 else rowCount
+    out = (""
+      + "relation\n"
+      + "cols: {}\n".format(self.cols)
+      + "# rows: {}\n".format(len(self.rows))
+      + "rows:\n"
+    )
+    for i, t in enumerate(sorted(self.rows)[0:rowCount]):
+      out += str(t)
+      if i != rowCount-1:
+        out += "\n"
+    return out
 
 # multi-way inner join between several relations
 # relations is a list of Relations
@@ -209,6 +237,6 @@ def joinDataSetsOrDie(relations, joinIndex):
   newRel = Relation(relations[0])
   if len(dataSets) > 1:
     for otherRelation in relations[1:]:
-      newRel.keysMatch(otherRelation, joinIndex, assert=True)
+      newRel.keysMatch(otherRelation, joinIndex, doAssert=True)
       newRel.leftHashJoin(otherRelation, joinIndex)
   return newRel
