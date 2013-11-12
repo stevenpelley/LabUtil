@@ -227,7 +227,10 @@ def AfterGroup(plotVars):
 
   # plot the group label
   groupLoc = plotVars['GroupOffset'] + ( (len(plotVars['GroupUniqueXVals'])-1.0) / 2.0)
-  PlotGroupLabel(plotVars, Common.makeLayerLabel(plotVars, 'Group'), groupLoc, -.08)
+  groupY = -.08
+  if 'groupLabelY' in plotVars:
+    groupY = plotVars['groupLabelY']
+  PlotGroupLabel(plotVars, Common.makeLayerLabel(plotVars, 'Group'), groupLoc, groupY)
 
   plotVars['TotalPointsCount'] += len(plotVars['GroupUniqueXVals'])
 

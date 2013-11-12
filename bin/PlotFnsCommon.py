@@ -160,6 +160,9 @@ def AfterSubplot(plotVars):
   if 'rotation' in plotVars['XTickLabelsKWArgs']:
     for label in plotVars['Axes'].get_xticklabels():
       label.set_rotation(plotVars['XTickLabelsKWArgs']['rotation'])
+  if 'horizontalalignment' in plotVars['XTickLabelsKWArgs']:
+    for label in plotVars['Axes'].get_xticklabels():
+      label.set(ha=plotVars['XTickLabelsKWArgs']['horizontalalignment'])
   # TODO: support all kwargs for xtick_labels, not just rotation
 
 # return the string label for the layer
