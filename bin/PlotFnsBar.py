@@ -213,7 +213,8 @@ def GroupNumerizeXVals(plotVars):
 def PlotGroupLabel(plotVars, text, XOffset, y):
   ax = plotVars['Axes']
   trans = matplotlib.transforms.blended_transform_factory(ax.transData, ax.transAxes)
-  plotVars['ExtraArtists'].append(ax.text(XOffset, y, text, va="top", ha="center", transform=trans))
+  k = plotVars.get('GroupLabelKWArgs', {}) 
+  plotVars['ExtraArtists'].append(ax.text(XOffset, y, text, va="top", ha="center", transform=trans, **k))
 
 def AfterGroup(plotVars):
   if plotVars['TraceFunctionCalls']:
