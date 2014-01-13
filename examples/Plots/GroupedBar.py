@@ -73,7 +73,7 @@ plotVars['Labels']= {
   'Series'  : 'Slope',
   'XAxis'   : 'this is x',
   'YAxis'   : 'this is y',
-  'Group'   : lambda t: "exp:{0[Exponent]},\noff: {0[Offset]}".format(t),
+  'Group'   : "exp:{0[Exponent]},\noff: {0[Offset]}",
 }
 
 plotVars['OutputDir'] = 'GroupedBar'
