@@ -42,7 +42,7 @@ def BeforeFigure(plotVars):
   plotVars['ExtraArtists'] = []
 
   if "Figure" in plotVars['Labels']:
-    plotVars['FigureTitle'] = plotVars['Labels']['Figure'] % plotVars['ColumnToValue']
+    plotVars['FigureTitle'] = makeLayerLabel(plotVars,'Figure')
   # default subplot dimensions
   plotVars['SubplotDimensions'] = (len(plotVars['SubplotsInFigure'][plotVars['LayerValues']['Figure']]),1)
   plotVars['Axes'] = None
@@ -173,10 +173,10 @@ def makeLayerLabel(plotVars, layer):
     import types
     assert isinstance(entry, str) or isinstance(entry, types.FunctionType), "Layer label inputs must be string or function"
     if isinstance(entry, str):
-      return entry.format(plotVars['ColumnToValue'])
+      return entry.format(**plotVars['ColumnToValue'])
     elif isinstance(entry, types.FunctionType):
-      ret = entry(plotVars['ColumnToValue'])
+      ret = entry(**plotVars['ColumnToValue'])
       assert isinstance(ret, str), "return of layer label function must be str"
       return ret
   else:
-    return str(plotVars['LayerValues'][layer])
+    return ' '.join([str(s) for s in plotVars['LayerValues'][layer]])

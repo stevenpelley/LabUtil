@@ -35,8 +35,8 @@ def BeforeSubplot(plotVars):
   plotVars['SeriesHatches'] = [' ', '/', '\\', '//', '\\\\', 'x']
   plotVars['SeriestoInt'] = {}
 
-  if "Series" in plotVars['Labels']:
-    plotVars['LegendTitle'] = plotVars['Labels']['Series'] % plotVars['ColumnToValue']
+  if "Legend" in plotVars['Labels']:
+    plotVars['LegendTitle'] = Common.makeLayerLabel(plotVars, 'Legend')
 
   ResetSeriesVars(plotVars)
 
@@ -80,13 +80,7 @@ def BeforeSeries(plotVars):
     print '+Series'
 
   # set series label
-  label = ""
-  vals = plotVars['LayerValues']['Series']
-  for i, col in enumerate(plotVars['LayerGroups']['Series']):
-    val = vals[i]
-    label += "%s" % (str(val),)
-    if i != len(vals)-1:
-      label += " "
+  label = Common.makeLayerLabel(plotVars, 'Series')
 
   if label in plotVars['SeriestoInt']:
     plotVars['SeriesLabel'] = None
@@ -131,7 +125,11 @@ def Point(plotVars):
   if plotVars['TraceFunctionCalls']:
     print ' Point'
 
-  plotVars['X'] = plotVars['ColumnToValue'][plotVars['LayerGroups']['Point'][0]]
+  if 'PointX' in plotVars['Labels']:
+    plotVars['X'] = Common.makeLayerLabel(plotVars, 'PointX')
+  else:
+    plotVars['X'] = plotVars['ColumnToValue'][plotVars['LayerGroups']['Point'][0]]
+
   plotVars['Y'] = plotVars['ColumnToValue'][plotVars['LayerGroups']['Point'][1]]
   plotVars['XVals'].append(plotVars['X'])
   plotVars['YVals'].append(plotVars['Y'])
